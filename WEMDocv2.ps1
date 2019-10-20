@@ -495,7 +495,7 @@ $DescriptionTable = @{
     SetProcessedGroups                                      = "Set Processed Groups"
     ProcessedGroupsList                                     = "Processed Groups List"
     SetExcludedGroups                                       = "Set Excluded Groups"
-    ExcludedGroupsList                                      = "Exlcuded Groups List"
+    ExcludedGroupsList                                      = "Excluded Groups List"
     ProcessAdmins                                           = "Process logons of local administrators"
     SetPathToUserStore                                      = "Set path to user store"
     PathToUserStore                                         = "User Store Path"
@@ -671,7 +671,7 @@ Document "Citrix WEM Documentation" {
 
     TOC -Name 'Table of Contents'
     PageBreak
-    
+    #region Config Sets
     Section -Name "WEM Configuration Sets" -Style Heading1 {
         $WEMConfigSets = Get-WEMConfiguration -Connection $Connection -Verbose
         Paragraph "There are ($($WEMConfigSets.Count) Configuration Sets found in the deployment):"
@@ -680,7 +680,8 @@ Document "Citrix WEM Documentation" {
         Paragraph "The following documentation outlines the $($WEMSite.Name) Configuration Set"
     }
     PageBreak
-
+    #endregion
+    #region Actions
     Section -Name "WEM Actions" -Style Heading1 {
         Section -Name "Actions - Action Groups" -Style Heading2 {
             $WEMActionGroups = Get-WEMActionGroup -Connection $Connection -IdSite $Site -Verbose
@@ -775,7 +776,8 @@ Document "Citrix WEM Documentation" {
         }
     }
     PageBreak
-
+    #endregion
+    #region Filters
     Section -Name "WEM Filters" -Style Heading1 {
         Section -Name "WEM Conditions" -Style Heading2 {
             $WEMConditions = Get-WEMCondition -Connection $Connection -IdSite $Site -Verbose
@@ -789,7 +791,8 @@ Document "Citrix WEM Documentation" {
         }
     }
     PageBreak
-    
+    #endregion
+    #region Assignments
     Section -Name "WEM Action Assignments" -Style Heading1 {
         Section -Name "Assignments - Action Groups" -Style Heading2 {
             $WEMActionGroupAssignments = Get-WEMActionGroupAssignment -Connection $Connection -IdSite $Site -Verbose
@@ -884,7 +887,8 @@ Document "Citrix WEM Documentation" {
         }
     }
     PageBreak
-
+    #endregion
+    #region System Optimization
     Section -Name "WEM System Optimization" -Style Heading1 {
         $WEMSystemOptimization = Get-WEMSystemOptimization -Connection $Connection -IdSite $Site -Verbose
         Section -Name "CPU Management" -Style Heading2 {
@@ -956,7 +960,7 @@ Document "Citrix WEM Documentation" {
             Paragraph "The following configurations relate to I/O Management Settings"
             StandardOutput -OutputObject $WEMIOManagement
         }
-        Section -Name "Fast LogoFf" -Style Heading2 {
+        Section -Name "Fast Logoff" -Style Heading2 {
             # Fast LogOff
             $WEMFastLogOffSettingsList = @("EnableFastLogoff",
                 "ExcludeGroupsFromFastLogoff",
@@ -969,7 +973,8 @@ Document "Citrix WEM Documentation" {
         }
     }
     PageBreak
-
+    #endregion
+    #region Policies and Profiles
     Section -Name "WEM Policies and Profiles" -Style Heading1 {
         $WEMEnvironmentalSettings = Get-WEMEnvironmentalSettings -Connection $Connection -IdSite $Site -Verbose
         Section -Name "Environmental Settings" -Style Heading2 {
@@ -1141,7 +1146,7 @@ Document "Citrix WEM Documentation" {
             Paragraph "The following Microsoft Roaming Profile Configurations are in place"
             StandardOutput -OutputObject $Settings
         }
-        Section -Name "USV - Folder Redirection Configuration" -Style Heading2 {                
+        Section -Name "USV - Folder Redirection Configuration" -Style Heading2 {
             # Folder Redirection Configuration
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "processFoldersRedirectionConfiguration" -or $_.Key -Like "DeleteLocalRedirectedFolders" }
             Paragraph -Style Heading3 "Folder Redirection - Configuration"
@@ -1242,12 +1247,102 @@ Document "Citrix WEM Documentation" {
         $WEMCitrixUPM = Get-WEMUPMSettings -Connection $Connection -IdSite $Site -Verbose
         Section -Name "Citrix Profile Management" -Style Heading2 {
             Paragraph "The following Citrix Profile Management Configuration is in place"
-            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key } | Sort-Object -Property Key
+            # Citrix Profile Management Enabled
+            BlankLine
+            Paragraph -Style Heading3 "UPM - Profile Management Configuration"
+            $SettingsList = @("UPMManagementEnabled")
+            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList }
             StandardOutput -OutputObject $Settings
+
+            # Citrix Profile Management
+            Paragraph -Style Heading3 "UPM - Citrix profile Management"
+            $SettingsList = @("ServiceActive",
+                "SetProcessedGroups",
+                "ProcessedGroupsList",
+                "SetExcludedGroups",
+                "ExcludedGroupsList",
+                "ProcessAdmins",
+                "SetPathToUserStore",
+                "PathToUserStore",
+                "MigrateUserStore",
+                "MigrateUserStorePath",
+                "PSMidSessionWriteBack",
+                "PSMidSessionWriteBackReg",
+                "OfflineSupport"
+            )
+            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+
+            # Profile Handling
+            Paragraph -Style Heading3 "UPM - Profile Handling"
+            $SettingsList = @("DeleteCachedProfilesOnLogoff",
+                "SetProfileDeleteDelay",
+                "ProfileDeleteDelay",
+                "SetMigrateWindowsProfilesToUserStore",
+                "MigrateWindowsProfilesToUserStore",
+                "AutomaticMigrationEnabled",
+                "SetLocalProfileConflictHandling",
+                "LocalProfileConflictHandling",
+                "SetTemplateProfilePath",
+                "TemplateProfilePath",
+                "TemplateProfileOverridesLocalProfile",
+                "TemplateProfileOverridesRoamingProfile",
+                "TemplateProfileIsMandatory"
+            )
+            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+
+            # Advanced Settings
+            Paragraph -Style Heading3 "UPM - Advanced Settings"
+            $SettingsList = @("SetLoadRetries",
+                "LoadRetries",
+                "XenAppOptimizationEnabled",
+                "XenAppOptimizationPath",
+                "SetUSNDBPath",
+                "USNDBPath",
+                "ProcessCookieFiles",
+                "DeleteRedirectedFolders",
+                "DisableDynamicConfig",
+                "LogoffRatherThanTempProfile",
+                "CEIPEnabled",
+                "OutlookSearchRoamingEnabled",
+                "SearchBackupRestoreEnabled"
+            )
+            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+
+            # Log Settings
+            Paragraph -Style Heading3 "UPM - Log Settings"
+            $SettingsList = @("LoggingEnabled",
+                "SetLogLevels",
+                "LogLevels",
+                "SetMaxLogSize",
+                "MaxLogSize",
+                "SetPathToLogFile",
+                "PathToLogFile"
+            )
+            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+
+            # Registy
+            Paragraph -Style Heading3 "UPM - Registry"
+            $SettingsList = @("LastKnownGoodRegistry",
+                "EnableDefaultExclusionListRegistry",
+                "ExclusionDefaultRegistry01",
+                "ExclusionDefaultRegistry02",
+                "ExclusionDefaultRegistry03",
+                "SetExclusionListRegistry",
+                "ExclusionListRegistry",
+                "SetInclusionListRegistry",
+                "InclusionListRegistry"
+            )
+            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
         }
     }
     PageBreak
-
+    #endregion
+    #region Security
     Section -Name "WEM Security" -Style Heading1 {
         $WEMSystemOptimization = Get-WEMSystemOptimization -Connection $Connection -IdSite $Site -Verbose
         
@@ -1307,7 +1402,8 @@ Document "Citrix WEM Documentation" {
         }
     }
     PageBreak
-    
+    #endregion
+    #region Active Directory Objects
     Section -Name "WEM Active Directory Objects" -Style Heading1 {
         Section -Name "Computer Objects Assigned" -Style Heading2 {
             $WEMComputers = Get-WEMADAgentObject -Connection $Connection -IdSite $Site -Verbose
@@ -1322,10 +1418,12 @@ Document "Citrix WEM Documentation" {
         }
     }
     PageBreak
-
+    #endregion
+    #region Transformer Settings
     Section -Name "WEM Transformer Settings" -Style Heading1 { }
     PageBreak
-    
+    #endregion
+    #region Advanced Settings
     Section -Name "WEM Advanced Settings" -Style Heading1 {
         $WEMAgentSettings = Get-WEMAgentSettings -Connection $Connection -IdSite 1 -Verbose
         Section -Name "Configuration - Main Configuration" -Style Heading2 {
@@ -1648,10 +1746,12 @@ Document "Citrix WEM Documentation" {
         }
     }
     PageBreak
-
+    #endregion
+    #region Administration
     Section -Name "WEM Administration" -Style Heading1 { }
     PageBreak
-
+    #endregion
+    #region Monitoring
     Section -Name "WEM Monitoring" -Style Heading1 {
         $WEMMonitoringSettings = Get-WEMSystemMonitoringSettings -Connection $Connection -IdSite $Site -Verbose
         Section -Name "Configuration" -Style Heading2 {
@@ -1685,7 +1785,8 @@ Document "Citrix WEM Documentation" {
         }
     }
     PageBreak
-
+    #endregion
+    #region Appendix
     Section -Name "Detailed Appendix - Actions" -Style Heading1 {
         Section -Name "Actions - Applications" -Style Heading2 {
             $WEMApplications = Get-WEMApplication -Connection $Connection -IdSite $Site -Verbose
@@ -1780,5 +1881,6 @@ Document "Citrix WEM Documentation" {
             }
         }
     }
+    #endregion
 } | Export-Document -Path ~\Desktop -Format Word, Html -Verbose
 

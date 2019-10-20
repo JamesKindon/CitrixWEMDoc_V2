@@ -1779,11 +1779,6 @@ Document "Citrix WEM Documentation" {
             }
         }
     }
-
 } | Export-Document -Path ~\Desktop -Format Word, Html -Verbose
 
-# Deal with multi values in table output
-# Deal with Table Sizes and Column Widths
-# AppLocker Conversion Function
-# Group SID translation
-
+# hello

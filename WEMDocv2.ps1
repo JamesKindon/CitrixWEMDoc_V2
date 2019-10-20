@@ -555,48 +555,48 @@ $DescriptionTable = @{
     ExclusionDefaultRegistry02                              = "Registry Default Exclusion"
     ExclusionDefaultRegistry03                              = "Registry Default Exclusion"
     SetExclusionListRegistry                                = "Enable Registry Exclusions"
-    ExclusionListRegistry                                   = "Registry Exlcusions"
+    ExclusionListRegistry                                   = "Registry Exclusions"
     SetInclusionListRegistry                                = "Enable Registry Inclusions"
     InclusionListRegistry                                   = "Registry Inclusions"
 
     # Policies and Profiles -> Citrix Profile Management Settings -> File System
     # File System
     EnableLogonExclusionCheck                               = "Enable Logon Exclusion Check"
-    LogonExclusionCheck                                     = "Logon Exlusion Check Setting"
+    LogonExclusionCheck                                     = "Logon exclusion Check Setting"
     EnableDefaultExclusionListDirectories                   = "Enable Default Exclusion List - Directories"
-    ExclusionDefaultDir01                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir02                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir03                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir04                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir05                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir06                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir07                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir09                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir08                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir10                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir11                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir12                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir13                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir14                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir15                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir16                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir17                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir18                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir19                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir20                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir21                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir22                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir23                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir24                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir25                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir26                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir27                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir28                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir29                                   = "Default Citrix Defined Exclusion"
-    ExclusionDefaultDir30                                   = "Default Citrix Defined Exclusion"
+    ExclusionDefaultDir01                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir02                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir03                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir04                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir05                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir06                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir07                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir09                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir08                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir10                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir11                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir12                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir13                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir14                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir15                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir16                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir17                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir18                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir19                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir20                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir21                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir22                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir23                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir24                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir25                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir26                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir27                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir28                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir29                                   = "Default Citrix Exclusion"
+    ExclusionDefaultDir30                                   = "Default Citrix Exclusion"
     SetSyncExclusionListFiles                               = "Enable File Exclusions"
     SyncExclusionListFiles                                  = "File Exclusion List"
-    SetSyncExclusionListDir                                 = "Enable Folder Exlusions"
+    SetSyncExclusionListDir                                 = "Enable Folder exclusions"
     SyncExclusionListDir                                    = "Folder Exclusion List"
 
     # Policies and Profiles -> Citrix Profile Management Settings -> Synchronization
@@ -616,7 +616,7 @@ $DescriptionTable = @{
     # Streamed User Profiles
     PSEnabled                                               = "Enable Profile Streaming"
     PSAlwaysCache                                           = "Always Cache"
-    PSAlwaysCacheSize                                       = "Cache fils this size or larger (megabyte)"
+    PSAlwaysCacheSize                                       = "Cache files this size or larger (megabyte)"
     SetPSPendingLockTimeout                                 = "Set timeout for pending area lock files"
     PSPendingLockTimeout                                    = "Timeout for pending area lock files (days)"
     SetPSUserGroupsList                                     = "Set streamed user profile groups"
@@ -629,7 +629,7 @@ $DescriptionTable = @{
     CPEnabled                                               = "Enable cross-platform settings"
     SetCPUserGroupList                                      = "Set Cross platform settings groups"
     CPUserGroupList                                         = "Cross platform settings groups"
-    SetCPSchemaPath                                         = "Set parth to cross-platform definitions"
+    SetCPSchemaPath                                         = "Set path to cross-platform definitions"
     CPSchemaPath                                            = "Path to cross-platform definitions"
     SetCPPath                                               = "Set path to cross-platform settings store"
     CPPath                                                  = "Path to cross-platform settings store"
@@ -1335,6 +1335,94 @@ Document "Citrix WEM Documentation" {
                 "ExclusionListRegistry",
                 "SetInclusionListRegistry",
                 "InclusionListRegistry"
+            )
+            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+
+            # File System
+            Paragraph -Style Heading3 "UPM - File System"
+            $SettingsList = @("EnableLogonExclusionCheck",
+                "LogonExclusionCheck",
+                "EnableDefaultExclusionListDirectories",
+                "ExclusionDefaultDir01",
+                "ExclusionDefaultDir02",
+                "ExclusionDefaultDir03",
+                "ExclusionDefaultDir04",
+                "ExclusionDefaultDir05",
+                "ExclusionDefaultDir06",
+                "ExclusionDefaultDir07",
+                "ExclusionDefaultDir09",
+                "ExclusionDefaultDir08",
+                "ExclusionDefaultDir10",
+                "ExclusionDefaultDir11",
+                "ExclusionDefaultDir12",
+                "ExclusionDefaultDir13",
+                "ExclusionDefaultDir14",
+                "ExclusionDefaultDir15",
+                "ExclusionDefaultDir16",
+                "ExclusionDefaultDir17",
+                "ExclusionDefaultDir18",
+                "ExclusionDefaultDir19",
+                "ExclusionDefaultDir20",
+                "ExclusionDefaultDir21",
+                "ExclusionDefaultDir22",
+                "ExclusionDefaultDir23",
+                "ExclusionDefaultDir24",
+                "ExclusionDefaultDir25",
+                "ExclusionDefaultDir26",
+                "ExclusionDefaultDir27",
+                "ExclusionDefaultDir28",
+                "ExclusionDefaultDir29",
+                "ExclusionDefaultDir30",
+                "SetSyncExclusionListFiles",
+                "SyncExclusionListFiles",
+                "SetSyncExclusionListDir",
+                "SyncExclusionListDir"
+            )
+            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 30 -Col3 40
+
+            # Synchronization
+            Paragraph -Style Heading3 "UPM - Synchronization"
+            $SettingsList = @("SetSyncDirList",
+                "SyncDirList",
+                "SetSyncFileList",
+                "SyncFileList",
+                "SetMirrorFoldersList",
+                "MirrorFoldersList",
+                "SetProfileContainerList",
+                "ProfileContainerList",
+                "SetLargeFileHandlingList",
+                "LargeFileHandlingList"
+            )
+            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 30 -Col3 40
+
+            # Streamed User profiles
+            Paragraph -Style Heading3 "UPM - Streamed User profiles"
+            $SettingsList = @("PSEnabled",
+                "PSAlwaysCache",
+                "PSAlwaysCacheSize",
+                "SetPSPendingLockTimeout",
+                "PSPendingLockTimeout",
+                "SetPSUserGroupsList",
+                "PSUserGroupsList",
+                "EnableStreamingExclusionList",
+                "StreamingExclusionList"
+            )
+            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+
+            # Streamed User profiles
+            Paragraph -Style Heading3 "UPM - Cross Platform Settings"
+            $SettingsList = @("CPEnabled",
+                "SetCPUserGroupList",
+                "CPUserGroupList",
+                "SetCPSchemaPath",
+                "CPSchemaPath",
+                "SetCPPath",
+                "CPPath",
+                "CPMigrationFromBaseProfileToCPStore"
             )
             $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
             StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30

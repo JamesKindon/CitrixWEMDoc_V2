@@ -1,4 +1,5 @@
-Import-Module E:\Citrix.WEMSDK\Citrix.WEMSDK.psd1 -Force
+#Import-Module E:\Citrix.WEMSDK\Citrix.WEMSDK.psd1 -Force
+Import-Module C:\users\JKindon\Documents\GitHub\Citrix.WEMSDK\Citrix.WEMSDK.psd1 -Force
 #Install-Module PSCribo -Force
 Import-Module PScribo -Force
 

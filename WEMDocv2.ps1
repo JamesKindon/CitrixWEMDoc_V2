@@ -733,6 +733,17 @@ $DescriptionTable = @{
     EnableSystemMonitoring                                  = ""
     EnableStrictPrivacy                                     = ""
     EnableGlobalSystemMonitoring                            = ""
+
+    # Advanced Parameters
+    ADSearchForestBlacklist                                 = ""
+    AgentSiteIdCacheOverdueTime                             = ""
+    ActionGroupsToggle                                      = ""
+    VersionInfo                                             = ""
+    GlobalLicenseServerPort                                 = ""
+    GlobalLicenseServer                                     = ""
+    DisplayUPMStatusToggle                                  = ""
+    ProfileContainerToggle                                  = ""
+    AgentDomainCacheOverdueTime                             = ""
 }
 #endregion
 
@@ -2086,6 +2097,25 @@ Document "Citrix WEM Documentation" {
             $Settings = $WEMMonitoringSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
             StandardOutput -OutputObject $Settings
         }
+    }
+    PageBreak
+    #endregion
+    #region WEM Advanced Configurations
+    Section -Name "WEM Advanced Options" -Style Heading1 {
+        $WEMAdvancedParams = Get-WEMParameters -Connection $Connection -IdSite $Site -Verbose
+        Paragraph "The following Advanced Options exist within the environment, though are not always visbile in the WEM Console"
+        $SettingsList = @("ADSearchForestBlacklist",
+            "AgentSiteIdCacheOverdueTime",
+            "ActionGroupsToggle",
+            "VersionInfo",
+            "GlobalLicenseServerPort",
+            "GlobalLicenseServer",
+            "DisplayUPMStatusToggle",
+            "ProfileContainerToggle",
+            "AgentDomainCacheOverdueTime"
+        )
+        $Settings = $WEMAdvancedParams.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+        StandardOutput -OutputObject $Settings
     }
     PageBreak
     #endregion

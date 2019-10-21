@@ -2062,7 +2062,17 @@ Document "Citrix WEM Documentation" {
     PageBreak
     #endregion
     #region Administration
-    Section -Name "WEM Administration" -Style Heading1 { }
+    Section -Name "WEM Administration" -Style Heading1 {
+        $GlobalAdmins = Get-WEMAdministrator -Connection $Connection -Verbose | Where-Object {$_.Permissions -like "Global Admin *"}
+        $SiteAdmins = Get-WEMAdministrator -Connection $Connection -IdSite 1 -Verbose
+        Paragraph "The following Global Administrators have been defined within the WEM Environment"
+        $GlobalAdmins | Table -Columns Name,Type,Permissions,Description,State
+        BlankLine
+        
+        Paragraph "The following Site Specific Administrators have been defined with the WEM Site"
+        $SiteAdmins | Table -Columns Name,Type,Permissions,Description,State
+        BlankLine
+     }
     PageBreak
     #endregion
     #region Monitoring

@@ -224,16 +224,16 @@ $DescriptionTable = @{
     #Asynchronous Processing
     aSyncVUEMPrintersProcessing                             = "aSync Printers Processing"
     aSyncVUEMNetDrivesProcessing                            = "aSync Network Drives Processing"
-    #aSyncVUEMAppsProcessing = "" <- Doesnt Exist in Console
-    #aSyncVUEMPortsProcessing = "" <- Doesnt Exist in Console
-    #aSyncVUEMRegValuesProcessing = "" <- Doesnt Exist in Console
-    #aSyncVUEMFileSystemOpsProcessing = "" <- Doesnt Exist in Console
-    #aSyncVUEMIniFilesOpsProcessing = "" <- Doesnt Exist in Console
-    #aSyncVUEMFileAssocsProcessing = "" <- Doesnt Exist in Console
-    #aSyncVUEMExtTasksProcessing = "" <- Doesnt Exist in Console
-    #aSyncVUEMUserDSNsProcessing = "" <- Doesnt Exist in Console
-    #aSyncVUEMEnvVariablesProcessing = "" <- Doesnt Exist in Console
-    #aSyncVUEMVirtualDrivesProcessing  = ""<- Doesnt Exist in Console
+    aSyncVUEMAppsProcessing                                 = "" #<- Doesnt Exist in Console
+    aSyncVUEMPortsProcessing                                = "" #<- Doesnt Exist in Console
+    aSyncVUEMRegValuesProcessing                            = "" #<- Doesnt Exist in Console
+    aSyncVUEMFileSystemOpsProcessing                        = "" #<- Doesnt Exist in Console
+    aSyncVUEMIniFilesOpsProcessing                          = "" #<- Doesnt Exist in Console
+    aSyncVUEMFileAssocsProcessing                           = "" #<- Doesnt Exist in Console
+    aSyncVUEMExtTasksProcessing                             = "" #<- Doesnt Exist in Console
+    aSyncVUEMUserDSNsProcessing                             = "" #<- Doesnt Exist in Console
+    aSyncVUEMEnvVariablesProcessing                         = "" #<- Doesnt Exist in Console
+    aSyncVUEMVirtualDrivesProcessing                        = "" #<- Doesnt Exist in Console
 
     #Extra Features
     InitialEnvironmentCleanUp                               = "Initial Environment CleanUp"
@@ -255,12 +255,12 @@ $DescriptionTable = @{
     enforceProcessVUEMVirtualDrives                         = "Enforce Virtual Drives Processing"
     enforceProcessVUEMEnvVariables                          = "Enforce Environment Variables Processing"
     enforceProcessVUEMPorts                                 = "Enforce Ports Processing"
-    #enforceProcessVUEMFileSystemOps = "" <- Doesnt Exist in Console
-    #enforceProcessVUEMFileAssocs = "" <- Doesnt Exist in Console
-    #enforceProcessVUEMUserDSNs = "" <- Doesnt Exist in Console
-    #enforceProcessVUEMRegValues = "" <- Doesnt Exist in Console
-    #enforceProcessVUEMIniFilesOps = "" <- Doesnt Exist in Console
-    #enforceProcessVUEMExtTasks = "" <- Doesnt Exist in Console
+    enforceProcessVUEMFileSystemOps                         = "" #<- Doesnt Exist in Console
+    enforceProcessVUEMFileAssocs                            = "" #<- Doesnt Exist in Console
+    enforceProcessVUEMUserDSNs                              = "" #<- Doesnt Exist in Console
+    enforceProcessVUEMRegValues                             = "" #<- Doesnt Exist in Console
+    enforceProcessVUEMIniFilesOps                           = "" #<- Doesnt Exist in Console
+    enforceProcessVUEMExtTasks                              = "" #<- Doesnt Exist in Console
 
     # Unassigned Actions Revert Processing
     revertUnassignedVUEMApps                                = "Revert Unassigned Applications"

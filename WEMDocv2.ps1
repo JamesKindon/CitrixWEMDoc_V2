@@ -58,7 +58,6 @@ Function Convert-Hashtable {
     }
 }
 
-
 function StandardOutput {
     param (
         [Parameter()] $OutputObject,
@@ -71,9 +70,7 @@ function StandardOutput {
     $OutputObject | Table -Columns Name, Description, State -Headers Setting, Description, Value -ColumnWidths $Col1, $col2, $Col3
     BlankLine
 }
-
 #endregion
-
 
 #region Translation
 $DescriptionTable = @{
@@ -662,8 +659,6 @@ $Connection = New-WEMDatabaseConnection -Server "KINDO-DDC\SQLEXPRESS" -Database
 $Site = 1
 #$WEMConfigSets = Get-WEMConfiguration -Connection $Connection -Verbose
 $WEMSite = Get-WEMConfiguration -Connection $Connection -IdSite $Site -Verbose
-
-#$WEMUSVConfiguration = Get-WEMUSVSettings -Connection $Connection -IdSite $Site -Verbose
 
 Document "Citrix WEM Documentation" {
 

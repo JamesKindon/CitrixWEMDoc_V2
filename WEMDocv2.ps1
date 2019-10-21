@@ -632,6 +632,89 @@ $DescriptionTable = @{
     CPPath                                                  = "Path to cross-platform settings store"
     CPMigrationFromBaseProfileToCPStore                     = "Enable source for creating cross-platform settings"
 
+    # Transformer Settings -> General -> General Settings
+    # General Settings
+    IsKioskEnabled                                          = "Enable Transformer"
+    GeneralStartUrl                                         = "Web Interface URL"
+
+    # Appearance
+    GeneralTitle                                            = "Custom Title"
+
+    GeneralWindowMode                                       = "Enable Window Mode"
+    GeneralClockEnabled                                     = "Display Clock"
+    GeneralClockUses12Hours                                 = "Show 12 Hour-Clock"
+    GeneralEnableLanguageSelect                             = "Allow Language Selection"
+    GeneralEnableAppPanel                                   = "Enable Application Panel"
+    GeneralAutoHideAppPanel                                 = "Auto Hide Application Panel"
+    GeneralShowNavigationButtons                            = "Show Navigation Buttons"
+    # Change Unlock Password
+    GeneralUnlockPassword                                   = "Unlock Password"
+
+    # Transformer Settings -> General -> Site Settings
+    # Site Settings
+    SitesIsListEnabled                                      = "Enable Site List"
+    SitesNamesAndLinks                                      = "Site List"
+    # Transformer Settings -> General -> Tool Settings
+    # Tool Settings
+    ToolsEnabled                                            = "Enable Tools List"
+    ToolsAppsList                                           = "Tools List"
+    # Transformer Settings -> Advanced -> Process Launcher
+    # Process Launcher Settings
+    ProcessLauncherEnabled                                  = "Enable Process Launcher"
+    ProcessLauncherApplication                              = "Process Command Line"
+    ProcessLauncherArgs                                     = "Process Arguments"
+    ProcessLauncherClearLastUsernameVMWare                  = "Clear Last Username for VMWare View"
+    ProcessLauncherEnableVMWareViewMode                     = "Enable VMWare View Mode"
+    ProcessLauncherEnableMicrosoftRdsMode                   = "Enabled Microsoft RDS Mode"
+    ProcessLauncherEnableCitrixMode                         = "Enable Citrix Mode"
+    # Transformer Settings -> Advanced -> Advanced and Administration Settings
+    # Advanced Settings
+    AdvancedFixBrowserRendering                             = "Fix Browser Rendering"
+    AdvancedLogOffScreenRedirection                         = "Log Off Screen Redirection"
+    AdvancedSuppressScriptErrors                            = "Supress Script Errors"
+    AdvancedFixSslSites                                     = "Fix SSL Sites"
+    AdvancedHideKioskWhileCitrixSession                     = "Hide Kiosk While Citrix Session"
+    AdvancedAlwaysShowAdminMenu                             = "Always Show Admin Menu"
+    AdvancedHideTaskbar                                     = "Hide Taskbar & Start Button"
+    AdvancedLockAltTab                                      = "Lock Alt-Tab"
+    AdvancedFixZOrder                                       = "Fix Z-Order"
+    SetCitrixReceiverFSOMode                                = "Lock Citrix Desktop Viewer"
+    #AdvancedShowWifiSettings = "" <- Not in Console
+    #AdvancedLockCtrlAltDel = "" <- not in Console
+
+    # Administration Settings
+    AdministrationHideDisplaySettings                       = "Hide Display Settings"
+    AdministrationHideKeyboardSettings                      = "Hide Keyboard Settings"
+    AdministrationHideMouseSettings                         = "Hide Mouse Settings"
+    AdministrationHideVolumeSettings                        = "Hide Volume Details"
+    AdministrationHideClientDetails                         = "Hide Client Details"
+    AdministrationDisableProgressBar                        = "Disable Progress Bar"
+    AdministrationHideWindowsVersion                        = "Hide Windows Version"
+    AdministrationHideHomeButton                            = "Hide Home Button"
+    AdministrationHidePrinterSettings                       = "Hide Printer Settings"
+    AdministrationPreLaunchReceiver                         = "Pre-Launch Receiver"
+    AdministrationDisableUnlock                             = "Disable Unlock"
+    AdministrationHideLogOffOption                          = "Hide Log Off Option"
+    AdministrationHideRestartOption                         = "Hide Restart Option"
+    AdministrationHideShutdownOption                        = "Hide Shutdown Option"
+    AdministrationIgnoreLastLanguage                        = "Ignore Last Language"
+    # Transformer Settings -> Advanced -> Logon/Logoff & Power Settings
+    # Autologon Options
+    AutologonEnable                                         = "Enable Autologon Mode"
+    AutologonUserName                                       = "User Name"
+    AutologonPassword                                       = "Password"
+    AutologonDomain                                         = "Domain/PC"
+    AutologonRegistryForce                                  = "Autologon Force"
+    AutologonRegistryIgnoreShiftOverride                    = "Ignore Shift Override"
+    # Desktop Mode Options
+    DesktopModeLogOffWebPortal                              = "Log Off Web Portal When a Session is Launched"
+    # End of Session Options
+    EndSessionOption                                        = "Action to take when the remote session ends"
+    # Power Options
+    PowerShutdownAfterSpecifiedTime                         = "Shut down at Specified Time (HH:MM)"
+    PowerShutdownAfterIdleTime                              = "Shut down When Idel (Seconds)"
+    PowerDontCheckBattery                                   = "Don't Check Battery Status"
+
     # Monitoring
     BusinessDayStartHour                                    = "Business Day Start (hour)"
     BusinessDayEndHour                                      = "Business Day End (hour)"
@@ -1503,7 +1586,144 @@ Document "Citrix WEM Documentation" {
     PageBreak
     #endregion
     #region Transformer Settings
-    Section -Name "WEM Transformer Settings" -Style Heading1 { }
+    Section -Name "WEM Transformer Settings" -Style Heading1 {
+        $WEMTransformerSettings = Get-WEMTransformerSettings -Connection $Connection -IdSite $site -Verbose
+        Section -Name "General - General Settings" -Style Heading2 {
+            # General Settings
+            $SettingsList = @("IsKioskEnabled",
+                "GeneralStartUrl"
+            )
+            Paragraph -Style Heading3 "General Settings"
+            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings
+            
+            # Appearance
+            $SettingsList = @("GeneralTitle",
+                "GeneralWindowMode",
+                "GeneralClockEnabled",
+                "GeneralClockUses12Hours",
+                "GeneralEnableLanguageSelect",
+                "GeneralEnableAppPanel",
+                "GeneralAutoHideAppPanel",
+                "GeneralShowNavigationButtons"
+            )
+            Paragraph -Style Heading3 "Appearance"
+            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings
+
+            # Change Unlock password
+            $SettingsList = @("GeneralUnlockPassword")
+            Paragraph -Style Heading3 "Change Unlock Password"
+            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings
+        }
+        Section -Name "General - Site Settings" -Style Heading2 {
+            # Site Settings
+            $SettingsList = @("SitesIsListEnabled",
+                "SitesNamesAndLinks"
+            )
+            Paragraph -Style Heading3 "Site Settings"
+            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings           
+        }
+        Section -Name "General - Tool Settings" -Style Heading2 {
+            #Tool Settings
+            $SettingsList = @("ToolsEnabled",
+                "ToolsAppsList"
+            )
+            Paragraph -Style Heading3 "Tool Settings"
+            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings
+        }
+        Section -Name "Advanced - Process Launcher" -Style Heading2 {
+            #Process Launcher
+            $SettingsList = @("ProcessLauncherEnabled",
+                "ProcessLauncherApplication",
+                "ProcessLauncherArgs",
+                "ProcessLauncherClearLastUsernameVMWare",
+                "ProcessLauncherEnableVMWareViewMode",
+                "ProcessLauncherEnableMicrosoftRdsMode",
+                "ProcessLauncherEnableCitrixMode"
+            )
+            Paragraph -Style Heading3 "Process Launcher Settings"
+            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings
+        }
+        Section -Name "Advanced - Advanced & Administration Settings" -Style Heading2 {
+            # Advanced Settings
+            $SettingsList = @("AdvancedFixBrowserRendering",
+                "AdvancedLogOffScreenRedirection",
+                "AdvancedSuppressScriptErrors",
+                "AdvancedFixSslSites",
+                "AdvancedHideKioskWhileCitrixSession",
+                "AdvancedAlwaysShowAdminMenu",
+                "AdvancedHideTaskbar",
+                "AdvancedLockAltTab",
+                "AdvancedFixZOrder",
+                "SetCitrixReceiverFSOMode",
+                "AdvancedShowWifiSettings",
+                "AdvancedLockCtrlAltDel"
+            )
+            Paragraph -Style Heading3 "Advanced Settings"
+            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings
+
+            # Administration Settings
+            $SettingsList = @("AdministrationHideDisplaySettings",
+                "AdministrationHideKeyboardSettings",
+                "AdministrationHideMouseSettings",
+                "AdministrationHideVolumeSettings",
+                "AdministrationHideClientDetails",
+                "AdministrationDisableProgressBar",
+                "AdministrationHideWindowsVersion",
+                "AdministrationHideHomeButton",
+                "AdministrationHidePrinterSettings",
+                "AdministrationPreLaunchReceiver",
+                "AdministrationDisableUnlock",
+                "AdministrationHideLogOffOption",
+                "AdministrationHideRestartOption",
+                "AdministrationHideShutdownOption",
+                "AdministrationIgnoreLastLanguage"
+            )
+            Paragraph -Style Heading3 "Administration Settings"
+            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings
+        }
+        Section -Name "Advanced - Logon/Logoff & Power Settings" -Style Heading2 {
+            # Autologon Options
+            $SettingsList = @("AutologonEnable",
+                "AutologonUserName",
+                "AutologonPassword",
+                "AutologonDomain",
+                "AutologonRegistryForce",
+                "AutologonRegistryIgnoreShiftOverride"
+            )
+            Paragraph -Style Heading3 "Autologon Options"
+            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings
+
+            # Desktop Mode Options
+            $SettingsList = @("DesktopModeLogOffWebPortal")
+            Paragraph -Style Heading3 "Desktop Mode Options"
+            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings
+
+            # End of Session Options
+            $SettingsList = @("EndSessionOption")
+            Paragraph -Style Heading3 "End of Session Options"
+            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings
+
+            # Power Options
+            $SettingsList = @("PowerShutdownAfterSpecifiedTime",
+                "PowerShutdownAfterIdleTime",
+                "PowerDontCheckBattery"
+            )
+            Paragraph -Style Heading3 "Power Options"
+            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings
+        }
+    }
     PageBreak
     #endregion
     #region Advanced Settings
@@ -1540,7 +1760,7 @@ Document "Citrix WEM Documentation" {
             $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
             StandardOutput -OutputObject $Settings
         }
-        Section -Name "Configuration - Cleanup Actions" -Style Heading2 {
+        Section -Name "Cleanup Actions" -Style Heading2 {
             # Shortcuts deletions
             Paragraph "Shortcuts Deletion at Startup" -Style Heading3
             $SettingsList = @("DeleteDesktopShortcuts",

@@ -210,21 +210,21 @@ $DescriptionTable = @{
 
     # Advanced Settings -> Configuration -> Agent Options
     # Agent Logs
-    EnableAgentLogging                                      = ""
-    AgentLogFile                                            = ""
-    AgentDebugMode                                          = ""
+    EnableAgentLogging                                      = "Enable Agent Logging"
+    AgentLogFile                                            = "Log File"
+    AgentDebugMode                                          = "Debug Mode"
     # Offline Mode Settings
-    OfflineModeEnabled                                      = ""
-    UseCacheEvenIfOnline                                    = ""
+    OfflineModeEnabled                                      = "Enable Offline Mode"
+    UseCacheEvenIfOnline                                    = "Use Cache Even If Online"
     #Refresh Settings
-    RefreshEnvironmentSettings                              = ""
-    RefreshSystemSettings                                   = ""
-    RefreshOnEnvironmentalSettingChange                     = ""
-    RefreshDesktop                                          = ""
-    RefreshAppearance                                       = ""
+    RefreshEnvironmentSettings                              = "Refresh Environment Settings"
+    RefreshSystemSettings                                   = "Refresh System Settings"
+    RefreshOnEnvironmentalSettingChange                     = "Refresh On Environmental Setting Change"
+    RefreshDesktop                                          = "Refresh Desktop"
+    RefreshAppearance                                       = "Refresh Appearance"
     #Asynchronous Processing
-    aSyncVUEMPrintersProcessing                             = ""
-    aSyncVUEMNetDrivesProcessing                            = ""
+    aSyncVUEMPrintersProcessing                             = "aSync Printers Processing"
+    aSyncVUEMNetDrivesProcessing                            = "aSync Network Drives Processing"
     #aSyncVUEMAppsProcessing = "" <- Doesnt Exist in Console
     #aSyncVUEMPortsProcessing = "" <- Doesnt Exist in Console
     #aSyncVUEMRegValuesProcessing = "" <- Doesnt Exist in Console
@@ -237,25 +237,25 @@ $DescriptionTable = @{
     #aSyncVUEMVirtualDrivesProcessing  = ""<- Doesnt Exist in Console
 
     #Extra Features
-    InitialEnvironmentCleanUp                               = ""
-    InitialDesktopUICleaning                                = ""
-    checkAppShortcutExistence                               = ""
-    appShortcutExpandEnvironmentVariables                   = ""
-    AgentEnableCrossDomainsUserGroupsSearch                 = ""
-    AgentBrokerServiceTimeoutValue                          = ""
-    AgentDirectoryServiceTimeoutValue                       = ""
-    AgentNetworkResourceCheckTimeoutValue                   = ""
-    AgentMaxDegreeOfParallelism                             = ""
-    ConnectionStateChangeNotificationEnabled                = ""
+    InitialEnvironmentCleanUp                               = "Initial Environment CleanUp"
+    InitialDesktopUICleaning                                = "Initial Desktop UI CleanUp"
+    checkAppShortcutExistence                               = "Check Application Existence"
+    appShortcutExpandEnvironmentVariables                   = "Expand App Variables"
+    AgentEnableCrossDomainsUserGroupsSearch                 = "Enable Cross Domains User Groups Search"
+    AgentBrokerServiceTimeoutValue                          = "Broker Service Timeout (ms)"
+    AgentDirectoryServiceTimeoutValue                       = "Directory Service Timeout (ms)"
+    AgentNetworkResourceCheckTimeoutValue                   = "Network Resource Timeout (ms)"
+    AgentMaxDegreeOfParallelism                             = "Agent Max Degree Of Parallelism"
+    ConnectionStateChangeNotificationEnabled                = "Enable Notifications"
 
     # Advanced Settings -> Configuration -> Advanced Options
     # Agent Actions Enforce Execution
-    enforceProcessVUEMApps                                  = ""
-    enforceProcessVUEMPrinters                              = ""
-    enforceProcessVUEMNetDrives                             = ""
-    enforceProcessVUEMVirtualDrives                         = ""
-    enforceProcessVUEMEnvVariables                          = ""
-    enforceProcessVUEMPorts                                 = ""
+    enforceProcessVUEMApps                                  = "Enforce Applications Processing"
+    enforceProcessVUEMPrinters                              = "Enforce Printers Processing"
+    enforceProcessVUEMNetDrives                             = "Enforce Network Drives Processing"
+    enforceProcessVUEMVirtualDrives                         = "Enforce Virtual Drives Processing"
+    enforceProcessVUEMEnvVariables                          = "Enforce Environment Variables Processing"
+    enforceProcessVUEMPorts                                 = "Enforce Ports Processing"
     #enforceProcessVUEMFileSystemOps = "" <- Doesnt Exist in Console
     #enforceProcessVUEMFileAssocs = "" <- Doesnt Exist in Console
     #enforceProcessVUEMUserDSNs = "" <- Doesnt Exist in Console
@@ -264,118 +264,118 @@ $DescriptionTable = @{
     #enforceProcessVUEMExtTasks = "" <- Doesnt Exist in Console
 
     # Unassigned Actions Revert Processing
-    revertUnassignedVUEMApps                                = ""
-    revertUnassignedVUEMPrinters                            = ""
-    revertUnassignedVUEMNetDrives                           = ""
-    revertUnassignedVUEMVirtualDrives                       = ""
-    revertUnassignedVUEMRegValues                           = ""
-    revertUnassignedVUEMEnvVariables                        = ""
-    revertUnassignedVUEMPorts                               = ""
-    revertUnassignedVUEMIniFilesOps                         = ""
-    revertUnassignedVUEMExtTasks                            = ""
-    revertUnassignedVUEMFileSystemOps                       = ""
-    revertUnassignedVUEMUserDSNs                            = ""
-    revertUnassignedVUEMFileAssocs                          = ""
+    revertUnassignedVUEMApps                                = "Revert Unassigned Applications"
+    revertUnassignedVUEMPrinters                            = "Revert Unassigned Printers"
+    revertUnassignedVUEMNetDrives                           = "Revert Unassigned Network Drives"
+    revertUnassignedVUEMVirtualDrives                       = "Revert Unassigned Virtual Drives"
+    revertUnassignedVUEMRegValues                           = "Revert Unassigned Registry Values"
+    revertUnassignedVUEMEnvVariables                        = "Revert Unassigned Ports"
+    revertUnassignedVUEMPorts                               = "Revert Unassigned Ports"
+    revertUnassignedVUEMIniFilesOps                         = "Revert Unassigned Ini Files Operations"
+    revertUnassignedVUEMExtTasks                            = "Revert Unassigned External Tasks"
+    revertUnassignedVUEMFileSystemOps                       = "Revert Unassigned File System Operations"
+    revertUnassignedVUEMUserDSNs                            = "Revert Unassigned User DSNs"
+    revertUnassignedVUEMFileAssocs                          = "Revert Unassigned File Associations"
     # Automatic Refresh (UI Agent Only)
-    EnableUIAgentAutomaticRefresh                           = ""
-    UIAgentAutomaticRefreshDelay                            = ""
+    EnableUIAgentAutomaticRefresh                           = "Enable Automatic Refresh"
+    UIAgentAutomaticRefreshDelay                            = "Refresh Delay (min)"
 
     # Advanced Settings -> Configuration -> Reconnection Actions
-    processVUEMAppsOnReconnect                              = ""
-    processVUEMPrintersOnReconnect                          = ""
-    processVUEMNetDrivesOnReconnect                         = ""
-    processVUEMVirtualDrivesOnReconnect                     = ""
-    processVUEMRegValuesOnReconnect                         = ""
-    processVUEMEnvVariablesOnReconnect                      = ""
-    processVUEMPortsOnReconnect                             = ""
-    processVUEMIniFilesOpsOnReconnect                       = ""
-    processVUEMExtTasksOnReconnect                          = ""
-    processVUEMFileSystemOpsOnReconnect                     = ""
-    processVUEMUserDSNsOnReconnect                          = ""
-    processVUEMFileAssocsOnReconnect                        = ""
+    processVUEMAppsOnReconnect                              = "Process Applications"
+    processVUEMPrintersOnReconnect                          = "Process Printers"
+    processVUEMNetDrivesOnReconnect                         = "Process Network Drives"
+    processVUEMVirtualDrivesOnReconnect                     = "Process Virtual Drives"
+    processVUEMRegValuesOnReconnect                         = "Process Registry Values"
+    processVUEMEnvVariablesOnReconnect                      = "Process Environment Variables"
+    processVUEMPortsOnReconnect                             = "Process Ports"
+    processVUEMIniFilesOpsOnReconnect                       = "Process Ini File Operations"
+    processVUEMExtTasksOnReconnect                          = "Process External Tasks"
+    processVUEMFileSystemOpsOnReconnect                     = "Process File System Operations"
+    processVUEMUserDSNsOnReconnect                          = "Process User DSNs"
+    processVUEMFileAssocsOnReconnect                        = "Process File Associations"
 
     # Advanced Settings -> Configuration -> Advanced Processing
-    enforceVUEMAppsFiltersProcessing                        = ""
-    enforceVUEMPrintersFiltersProcessing                    = ""
-    enforceVUEMNetDrivesFiltersProcessing                   = ""
-    enforceVUEMVirtualDrivesFiltersProcessing               = ""
-    enforceVUEMRegValuesFiltersProcessing                   = ""
-    enforceVUEMEnvVariablesFiltersProcessing                = ""
-    enforceVUEMPortsFiltersProcessing                       = ""
-    enforceVUEMIniFilesOpsFiltersProcessing                 = ""
-    enforceVUEMExtTasksFiltersProcessing                    = ""
-    enforceVUEMFileSystemOpsFiltersProcessing               = ""
-    enforceVUEMUserDSNsFiltersProcessing                    = ""
-    enforceVUEMFileAssocsFiltersProcessing                  = ""
+    enforceVUEMAppsFiltersProcessing                        = "Enforce Applications Filters Processing"
+    enforceVUEMPrintersFiltersProcessing                    = "Enforce Printers Filters Processing"
+    enforceVUEMNetDrivesFiltersProcessing                   = "Enforce Network Drives Filters Processing"
+    enforceVUEMVirtualDrivesFiltersProcessing               = "Enforce Virtual Drives Filters Processing"
+    enforceVUEMRegValuesFiltersProcessing                   = "Enforce Registry Values Filters Processing"
+    enforceVUEMEnvVariablesFiltersProcessing                = "Enforce Environment Variables Filters Processing"
+    enforceVUEMPortsFiltersProcessing                       = "Enforce Ports Filters Processing"
+    enforceVUEMIniFilesOpsFiltersProcessing                 = "Enforce Ini File Operations Filters Processing"
+    enforceVUEMExtTasksFiltersProcessing                    = "Enforce External Tasks Filters Processing"
+    enforceVUEMFileSystemOpsFiltersProcessing               = "Enforce File System Operations Filters Processing"
+    enforceVUEMUserDSNsFiltersProcessing                    = "Enforce User DSNs Filters Processing"
+    enforceVUEMFileAssocsFiltersProcessing                  = "Enforce File Associations Filters Processing"
 
     # Advanced Settings -> Configuration -> Service Options
     # Agent Service Advanced Options
-    VUEMAgentCacheRefreshDelay                              = ""
-    VUEMAgentSQLSettingsRefreshDelay                        = ""
-    VUEMAgentDesktopsExtraLaunchDelay                       = ""
-    AgentServiceDebugMode                                   = ""
-    byPassie4uinitCheck                                     = ""
+    VUEMAgentCacheRefreshDelay                              = "Agent Cache Refresh Delay (min)"
+    VUEMAgentSQLSettingsRefreshDelay                        = "SQL Settings Refresh Delay (min)"
+    VUEMAgentDesktopsExtraLaunchDelay                       = "Agent Extra Launch Delay (ms)"
+    AgentServiceDebugMode                                   = "Enable Debug mode"
+    byPassie4uinitCheck                                     = "byPass ie4uinit Check"
 
     # Agent Launch Exclusions
-    AgentLaunchExcludeGroups                                = ""
-    AgentLaunchExcludedGroups                               = ""
-    AgentLaunchIncludeGroups                                = ""
-    AgentLaunchIncludedGroups                               = ""
+    AgentLaunchExcludeGroups                                = "Do not launch VUEM agent for specifed Groups"
+    AgentLaunchExcludedGroups                               = "Excluded Groups"
+    AgentLaunchIncludeGroups                                = "Launch VUEM agent for specifed Groups"
+    AgentLaunchIncludedGroups                               = "Included Groups"
 
-    # Advanced Settings -> Configuration -> Console Settings
+    # Advanced Settings -> Configuration -> Agent Switch
     AgentSwitchFeatureToggle                                = ""
-    SwitchtoServiceAgent                                    = ""
-    CloudConnectors                                         = ""
-    UseGPO                                                  = ""
+    SwitchtoServiceAgent                                    = "Switch to Service Agent"
+    CloudConnectors                                         = "Configure Citrix Cloud Connectors"
+    UseGPO                                                  = "Skip Citrix Cloud Connector Configuration"
 
     # Advanced Settings -> UI Agent Personalization -> UI Agent Options
     # Branding
-    UIAgentSplashScreenBackGround                           = ""
-    UIAgentLoadingCircleColor                               = ""
-    UIAgentLbl1TextColor                                    = ""
-    UIAgentSkinName                                         = ""
-    HideUIAgentSplashScreen                                 = ""
-    HideUIAgentSplashScreenOnReconnect                      = ""
+    UIAgentSplashScreenBackGround                           = "Custom Background Image Path"
+    UIAgentLoadingCircleColor                               = "Loading Circle Color"
+    UIAgentLbl1TextColor                                    = "Text Label Color"
+    UIAgentSkinName                                         = "UI Agent Skin"
+    HideUIAgentSplashScreen                                 = "Hide Agent Splashscreen"
+    HideUIAgentSplashScreenOnReconnect                      = "Hide Agent Splashscreen on Reconnection"
 
     # Published Applications Behavior
-    HideUIAgentIconInPublishedApplications                  = ""
-    HideUIAgentSplashScreenInPublishedApplications          = ""
+    HideUIAgentIconInPublishedApplications                  = "Hide Agent Icon In Published Applications"
+    HideUIAgentSplashScreenInPublishedApplications          = "Hide Agent Splash Screen In Published Applications"
 
     # User Interaction
-    AgentExitForAdminsOnly                                  = ""
-    AgentAllowUsersToManagePrinters                         = ""
-    AgentAllowUsersToManageApplications                     = ""
-    AgentPreventExitForAdmins                               = ""
-    AgentEnableApplicationsShortcuts                        = ""
-    DisableAdministrativeRefreshFeedback                    = ""
+    AgentExitForAdminsOnly                                  = "Only Admins can Close Agent"
+    AgentAllowUsersToManagePrinters                         = "Allow Users To Manage Printers"
+    AgentAllowUsersToManageApplications                     = "Allow Users To Manage Applications"
+    AgentPreventExitForAdmins                               = "Prevent Admins from Closing Agent"
+    AgentEnableApplicationsShortcuts                        = "Enable Applications Shortcuts"
+    DisableAdministrativeRefreshFeedback                    = "Disable Administrative Refresh Feedback"
 
     # Advanced Settings -> UI Agent Personalization -> Helpdesk Options
     # Help & Custom Links
-    UIAgentHelpLink                                         = ""
-    UIAgentCustomLink                                       = ""
+    UIAgentHelpLink                                         = "Help Link Action"
+    UIAgentCustomLink                                       = "Custom Link Action"
 
     # Screen Capture Options
-    AgentAllowScreenCapture                                 = ""
-    AgentScreenCaptureEnableSendSupportEmail                = ""
-    AgentScreenCaptureSupportEmailAddress                   = ""
+    AgentAllowScreenCapture                                 = "Enable Screen Capture"
+    AgentScreenCaptureEnableSendSupportEmail                = "Enable Send to Support Option"
+    AgentScreenCaptureSupportEmailAddress                   = "Support Email Address"
     MailSMTPToAddress                                       = ""
-    MailCustomSubject                                       = ""
-    AgentScreenCaptureSupportEmailTemplate                  = ""
-    MailEnableUseSMTP                                       = ""
-    MailSMTPServer                                          = ""
-    MailSMTPPort                                            = ""
-    MailEnableSMTPSSL                                       = ""
-    MailSMTPFromAddress                                     = ""
-    MailEnableUseSMTPCredentials                            = ""
-    MailSMTPUser                                            = ""
-    MailSMTPPassword                                        = ""
+    MailCustomSubject                                       = "Custom Subject"
+    AgentScreenCaptureSupportEmailTemplate                  = "Email Template"
+    MailEnableUseSMTP                                       = "Use SMTP to send Email"
+    MailSMTPServer                                          = "SMTP Server"
+    MailSMTPPort                                            = "SMTP Port"
+    MailEnableSMTPSSL                                       = "Require SSL"
+    MailSMTPFromAddress                                     = "From Address"
+    MailEnableUseSMTPCredentials                            = "Use SMTP Credentials"
+    MailSMTPUser                                            = "User Name"
+    MailSMTPPassword                                        = "Password"
 
     # Power Saving
-    AgentShutdownAfterEnabled                               = ""
-    AgentShutdownAfter                                      = ""
-    AgentShutdownAfterIdleEnabled                           = ""
-    AgentShutdownAfterIdleTime                              = ""
-    AgentSuspendInsteadOfShutdown                           = ""
+    AgentShutdownAfterEnabled                               = "Shut down at Specified time (HH:MM)"
+    AgentShutdownAfter                                      = "Shut down time"
+    AgentShutdownAfterIdleEnabled                           = "Shut down When Idle (seconds)"
+    AgentShutdownAfterIdleTime                              = "Idle Time"
+    AgentSuspendInsteadOfShutdown                           = "Suspend Instead Of Shutdown"
 
     # System Optimization -> CPU Management
     # Spikes Protection
@@ -2105,7 +2105,7 @@ Document "Citrix WEM Documentation" {
                 "EnableStrictPrivacy"
             )
             $Settings = $WEMMonitoringSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -col1 30 -Col2 30 -Col3 40
         }
     }
     PageBreak

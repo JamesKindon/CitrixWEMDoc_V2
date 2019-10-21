@@ -64,7 +64,6 @@ function StandardOutput {
         [Parameter()] [int] $Col1 = 40,
         [Parameter()] [int] $Col2 = 40,
         [Parameter()] [int] $Col3 = 20
-
     )
     $OutputObject = Convert-Hashtable -Hashtable $OutputObject
     $OutputObject | Table -Columns Name, Description, State -Headers Setting, Description, Value -ColumnWidths $Col1, $col2, $Col3
@@ -2064,7 +2063,8 @@ Document "Citrix WEM Documentation" {
     #region Administration
     Section -Name "WEM Administration" -Style Heading1 {
         $GlobalAdmins = Get-WEMAdministrator -Connection $Connection -Verbose | Where-Object {$_.Permissions -like "Global Admin *"}
-        $SiteAdmins = Get-WEMAdministrator -Connection $Connection -IdSite 1 -Verbose
+        $SiteAdmins = Get-WEMAdministrator -Connection $Connection -IdSite $Site -Verbose
+
         Paragraph "The following Global Administrators have been defined within the WEM Environment"
         $GlobalAdmins | Table -Columns Name,Type,Permissions,Description,State
         BlankLine

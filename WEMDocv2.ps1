@@ -2100,7 +2100,7 @@ Document "Citrix WEM Documentation" {
     }
     PageBreak
     #endregion
-    #region WEM Advanced Configurations
+    #region WEM Advanced Options
     Section -Name "WEM Advanced Options" -Style Heading1 {
         $WEMAdvancedParams = Get-WEMParameters -Connection $Connection -IdSite $Site -Verbose
         Paragraph "The following Advanced Options exist within the environment, though are not always visbile in the WEM Console"

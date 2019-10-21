@@ -1265,73 +1265,73 @@ Document "Citrix WEM Documentation" {
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "DesktopRedirectedPath" }
             Paragraph -Style Heading3 "Folder Redirection - Desktop"
             Paragraph "The following Settings Outline the Desktop Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
 
             # Documents Settings
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "PersonalRedirectedPath" }
             Paragraph -Style Heading3 "Folder Redirection - Documents"
             Paragraph "The following Settings Outline the Documents Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
 
             # Pictures Settings
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "PicturesRedirectedPath" -or $_.Key -Like "MyPicturesFollowsDocuments" }
             Paragraph -Style Heading3 "Folder Redirection - Pictures"
             Paragraph "The following Settings Outline the Pictures Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
 
             # Music
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "MusicRedirectedPath" -or $_.Key -Like "MyMusicFollowsDocuments" } | Sort-Object -Descending
             Paragraph -Style Heading3 "Folder Redirection - Music"
             Paragraph "The following Settings Outline the Music Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
 
             # Videos
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "VideoRedirectedPath" -or $_.Key -Like "MyVideoFollowsDocuments" }
             Paragraph -Style Heading3 "Folder Redirection - Videos"
             Paragraph "The following Settings Outline the Videos Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
 
             # Start
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "StartMenuRedirectedPath" }
             Paragraph -Style Heading3 "Folder Redirection - Start Menu"
             Paragraph "The following Settings Outline the Start Menu Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
 
             # Favorites
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "FavoritesRedirectedPath" }
             Paragraph -Style Heading3 "Folder Redirection - Favorites"
             Paragraph "The following Settings Outline the Favorites Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
 
             # AppData
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "AppDataRedirectedPath" }
             Paragraph -Style Heading3 "Folder Redirection - AppData"
             Paragraph "The following Settings Outline the AppData Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
 
             # Contacts
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "ContactsRedirectedPath" }
             Paragraph -Style Heading3 "Folder Redirection - Contacts"
             Paragraph "The following Settings Outline the Contacts Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
 
             # Downloads
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "DownloadsRedirectedPath" }
             Paragraph -Style Heading3 "Folder Redirection - Downloads"
             Paragraph "The following Settings Outline the Downloads Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
 
             # Links
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "LinksRedirectedPath" }
             Paragraph -Style Heading3 "Folder Redirection - Links"
             Paragraph "The following Settings Outline the Links Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
 
             # Searches
             $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "SearchesRedirectedPath" }
             Paragraph -Style Heading3 "Folder Redirection - Searches"
             Paragraph "The following Settings Outline the Searches Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings
+            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
         }
         $WEMCitrixUPM = Get-WEMUPMSettings -Connection $Connection -IdSite $Site -Verbose
         Section -Name "Citrix Profile Management" -Style Heading2 {
@@ -2068,7 +2068,7 @@ Document "Citrix WEM Documentation" {
         Paragraph "The following Global Administrators have been defined within the WEM Environment"
         $GlobalAdmins | Table -Columns Name,Type,Permissions,Description,State
         BlankLine
-        
+
         Paragraph "The following Site Specific Administrators have been defined with the WEM Site"
         $SiteAdmins | Table -Columns Name,Type,Permissions,Description,State
         BlankLine
@@ -2200,27 +2200,26 @@ Document "Citrix WEM Documentation" {
                 BlankLine
             }
         }
-
-        Section -Name "Detailed Appendix - Filters" -Style Heading1 {
-            Section -Name "Conditions" {
-                $WEMConditions = Get-WEMCondition -Connection $Connection -IdSite $Site -Verbose
-                Paragraph "Detailed Configurations for all WEM Conditions are outlined below"
+    }
+    Section -Name "Detailed Appendix - Filters" -Style Heading1 {
+        Section -Name "Conditions" -Style Heading2 {
+            $WEMConditions = Get-WEMCondition -Connection $Connection -IdSite $Site -Verbose
+            Paragraph "Detailed Configurations for all WEM Conditions are outlined below"
+            BlankLine
+            foreach ($Condition in $WEMConditions) {
+                Paragraph -Style Heading3 "$($Condition.Name)"
+                $Condition | Table -List -Columns Name, Description, State, Type, TestValue, TestResult
                 BlankLine
-                foreach ($Condition in $WEMConditions) {
-                    Paragraph -Style Heading3 "$($Condition.Name)"
-                    $Condition | Table -List -Columns Name, Description, State, Type, TestValue, TestResult
-                    BlankLine
-                }
             }
-            Section -Name "Rules" {
-                $WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose
-                Paragraph "Detailed Configurations for all WEM Rules are outlined below"
+        }
+        Section -Name "Rules" -Style Heading2 {
+            $WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose
+            Paragraph "Detailed Configurations for all WEM Rules are outlined below"
+            BlankLine
+            foreach ($Rule in $WEMRules) {
+                Paragraph -Style Heading3 "$($Rule.Name)"
+                $Rule | Table -List -Columns Name, Description, State, Conditions
                 BlankLine
-                foreach ($Rule in $WEMRules) {
-                    Paragraph -Style Heading3 "$($Rule.Name)"
-                    $Rule | Table -List -Columns Name, Description, State, Conditions
-                    BlankLine
-                }
             }
         }
     }

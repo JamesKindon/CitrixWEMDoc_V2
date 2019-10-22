@@ -772,7 +772,7 @@ Document "Citrix WEM Documentation" {
     #region Actions
     Section -Name "WEM Actions" -Style Heading1 {
         Section -Name "Actions - Action Groups" -Style Heading2 {
-            $WEMActionGroups = Get-WEMActionGroup -Connection $Connection -IdSite $Site -Verbose
+            $WEMActionGroups = Get-WEMActionGroup -Connection $Connection -IdSite $Site -Verbose | Select-Object Name,Description,@{Name='Actions';Expression={$_.Actions -join '; '}},State
             $Count = ($WEMActionGroups | Measure-Object).Count
             $ActionType = "Action Group"
             CountAndReportActions
@@ -873,7 +873,8 @@ Document "Citrix WEM Documentation" {
             $WEMConditions | Table  -List -Columns Name, Description, State, Type, TestValue, TestResult
         }
         Section -Name "WEM Rules" -Style Heading2 {
-            $WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose
+            #$WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose
+            $WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose | Select-Object Name,Description,@{Name='Conditions';Expression={$_.Conditions -join '; '}},State
             Paragraph "The following Rules have been defined"
             $WEMRules | Table -Columns Name, Conditions
         }
@@ -890,7 +891,7 @@ Document "Citrix WEM Documentation" {
             $WEMActionGroupAssignments | Table -Columns AssignedObject, ADObject, Rule
         }
         Section -Name "Assignments - Applications" -Style Heading2 {
-            $WEMApplicationAssignments = Get-WEMAppAssignment -Connection $Connection -IdSite $Site -Verbose
+            $WEMApplicationAssignments = Get-WEMAppAssignment -Connection $Connection -IdSite $Site -Verbose | Select-Object AssignedObject,ADObject,Rule,@{Name='AssignmentProperties';Expression={$_.AssignmentProperties -join '; '}}
             $Count = ($WEMApplicationAssignments | Measure-Object).Count
             $AssignmentType = "Applications"
             CountAndReportAssignments
@@ -2213,7 +2214,7 @@ Document "Citrix WEM Documentation" {
             }
         }
         Section -Name "Rules" -Style Heading2 {
-            $WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose
+            $WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose | Select-Object Name,Description,State,@{Name='Conditions';Expression={$_.Conditions -join '; '}}
             Paragraph "Detailed Configurations for all WEM Rules are outlined below"
             BlankLine
             foreach ($Rule in $WEMRules) {

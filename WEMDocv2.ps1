@@ -1,75 +1,27 @@
-#Import-Module E:\Citrix.WEMSDK\Citrix.WEMSDK.psd1 -Force
-Import-Module C:\users\JKindon\Documents\GitHub\Citrix.WEMSDK\Citrix.WEMSDK.psd1 -Force
-#Install-Module PSCribo -Force
-Import-Module PScribo -Force
+Param(
+    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset1')]
+    [Parameter(ParameterSetName = 'Paramset2')]
+    [string]$DBServer = "KINDO-DDC\SQLEXPRESS", # <- FIx this
 
-#region functions
-function CountAndReportAssignments {
-    if ($Count -ne "0") {
-        Paragraph "There are $($Count) $($AssignmentType) Assignments. The following $($AssignmentType) Assignments are in place"
-    }
-    else {
-        Paragraph "There are no $($AssignmentType) Assignments"
-    }
-}
+    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset1')]
+    [Parameter(ParameterSetName = 'Paramset2')]
+    [string]$DBName = "CitrixWEM", # <- FIx this
 
-function CountAndReportActions {
-    if ($Count -ne "0") {
-        Paragraph "There are $($Count) $($ActionType) Actions. The following $($ActionType) Actions have been defined"
-    }
-    else {
-        Paragraph "There are no $($ActionType) Actions defined"
-    }
-}
+    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset2')]
+    [int]$Site = 1,
 
-Function Convert-Hashtable {
-    Param(
-        [Parameter()]
-        $Hashtable
-    )
-    if (($Hashtable).Count -gt 1) {
-        ForEach ($item in $Hashtable.GetEnumerator()) {
-            $Name = $null
-            ForEach ($Record in $DescriptionTable.GetEnumerator()) {
-                if ($Item.Name -eq $Record.Name) { $Name = $Record.Value } 
-                $PSObject = [PSCustomObject] @{
-                    Name        = $Item.Key
-                    Description = $Name
-                    State       = if ($Item.Value -eq 0) { "Disabled" } elseif ($Item.Value -eq 1) { "Enabled" } elseif ($Item.Value -ne 0 -and $Item.Value -ne 1) { $Item.Value }
-                } 
-            }
-            Write-Output -InputObject $PSObject
-        }
-    }
-    elseif (($Hashtable).Count -eq 1) {
-        ForEach ($item in $Hashtable) {
-            $Name = $null
-            ForEach ($Record in $DescriptionTable.GetEnumerator()) {
-                if ($Item.Name -eq $Record.Name) { $Name = $Record.Value } 
-                $PSObject = [PSCustomObject] @{
-                    Name        = $Item.Key
-                    Description = $Name
-                    State       = if ($Item.Value -eq 0) { "Disabled" } elseif ($Item.Value -eq 1) { "Enabled" } elseif ($Item.Value -ne 0 -and $Item.Value -ne 1) { $Item.Value }
-                } 
-            }
-            Write-Output -InputObject $PSObject
-        }
+    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset2')]
+    [string]$OutputLocation = "~\Desktop",
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset2')]
+    [switch]$Detailed,
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset1')]
+    [switch]$ListAllConfigSets,
     
-    }
-}
-
-function StandardOutput {
-    param (
-        [Parameter()] $OutputObject,
-        [Parameter()] [int] $Col1 = 40,
-        [Parameter()] [int] $Col2 = 40,
-        [Parameter()] [int] $Col3 = 20
-    )
-    $OutputObject = Convert-Hashtable -Hashtable $OutputObject
-    $OutputObject | Table -Columns Name, Description, State -Headers Setting, Description, Value -ColumnWidths $Col1, $col2, $Col3
-    BlankLine
-}
-#endregion
+    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset2')
+    ][string]$CompanyName
+)
 
 #region Translation
 $DescriptionTable = @{
@@ -746,1484 +698,1689 @@ $DescriptionTable = @{
 }
 #endregion
 
-$Connection = New-WEMDatabaseConnection -Server "KINDO-DDC\SQLEXPRESS" -Database "CitrixWEM" -Verbose
+#region functions
+function CheckModuleExists {
+    param (
+        $Module
+    )
 
-### Example Document details
-$Site = 1
-#$WEMConfigSets = Get-WEMConfiguration -Connection $Connection -Verbose
-$WEMSite = Get-WEMConfiguration -Connection $Connection -IdSite $Site -Verbose
-
-Document "Citrix WEM Documentation" {
-
-    Paragraph -Style Heading1 "Citrix WEM Documentation"
-
-    TOC -Name 'Table of Contents'
-    PageBreak
-    #region Config Sets
-    Section -Name "WEM Configuration Sets" -Style Heading1 {
-        $WEMConfigSets = Get-WEMConfiguration -Connection $Connection -Verbose
-        Paragraph "There are ($($WEMConfigSets.Count) Configuration Sets found in the deployment):"
-        $WEMConfigSets | Table -Columns Name, Description, State -Headers 'Name', 'Description', 'State'
-        BlankLine
-        Paragraph "The following documentation outlines the $($WEMSite.Name) Configuration Set"
+    if (Get-Module -Name $Module) {
+        Write-Verbose "Module $Module Exists" -Verbose
     }
-    PageBreak
-    #endregion
-    #region Actions
-    Section -Name "WEM Actions" -Style Heading1 {
-        Section -Name "Actions - Action Groups" -Style Heading2 {
-            $WEMActionGroups = Get-WEMActionGroup -Connection $Connection -IdSite $Site -Verbose | Select-Object Name,Description,@{Name='Actions';Expression={$_.Actions -join '; '}},State
-            $Count = ($WEMActionGroups | Measure-Object).Count
-            $ActionType = "Action Group"
-            CountAndReportActions
-            $WEMActionGroups | Table -Columns Name, Actions, State
+    else {
+        try {
+            Write-Verbose "$Module Module is not installed, attempting to install" -Verbose
+            Install-Module -Name $Module -Force
+            Import-Module -Name $Module -Force
+            Write-Verbose "Success! Module $Module installed" -Verbose
         }
-        Section -Name "Actions - Applications" -Style Heading2 {
-            $WEMApplications = Get-WEMApplication -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMApplications | Measure-Object).Count
-            $ActionType = "Application"
-            CountAndReportActions
-            $WEMApplications | Table -Columns Name, Description, Type
-        }
-        Section -Name "Actions - Printers" -Style Heading2 {
-            $WEMPrinters = Get-WEMPrinter -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMPrinters | Measure-Object).Count
-            $ActionType = "Printer"
-            CountAndReportActions
-            $WEMPrinters | Table -Columns Name, DisplayName, TargetPath, ActionType
-        }
-        Section -Name "Actions - Network Drives" -Style Heading2 {
-            $WEMNetworkDrives = Get-WEMNetDrive -Connection $Connection -IdSite $site -Verbose
-            $Count = ($WEMNetworkDrives | Measure-Object).Count
-            $ActionType = "Network Drive"
-            CountAndReportActions
-            $WEMNetworkDrives | Table -Columns Name, DisplayName, Description, TargetPath
-        }
-        Section -Name "Actions - Virtual Drives" -Style Heading2 {
-            $WEMVirtualDrives = Get-WEMVirtualDrive -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMVirtualDrives | Measure-Object).Count
-            $ActionType = "Virtual Drive"
-            CountAndReportActions
-            $WEMVirtualDrives | Table -Columns Name, Description, ActionType, TargetPath, SetAsHomeDriveEnabled
-        }
-        Section -Name "Actions - Registry Values" -Style Heading2 {
-            $WEMRegistryValues = Get-WEMRegistryEntry -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMRegistryValues | Measure-Object).Count
-            $ActionType = "Registry Value"
-            CountAndReportActions            
-            $WEMRegistryValues | Table -Columns Name, Description, ActionType, State
-        }
-        Section -Name "Actions - Environment Variables" -Style Heading2 {
-            $WEMEnvironmentVariables = Get-WEMEnvironmentVariable -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMEnvironmentVariables | Measure-Object).Count
-            $ActionType = "Environment Variable"
-            CountAndReportActions
-            $WEMEnvironmentVariables | Table -Columns Name, VariableName, VariableValue, VariableType
-        }
-        Section -Name "Actions - Ports" -Style Heading2 {
-            $WEMPorts = Get-WEMPort -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMPorts | Measure-Object).Count
-            $ActionType = "Port"
-            CountAndReportActions
-            $WEMPorts | Table -Columns Name, Description, PortName, TargetPath
-        }
-        Section -Name "Actions - Ini File Operations" -Style Heading2 {
-            $WEMIniFiles = Get-WEMIniFileOperation -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMIniFiles | Measure-Object).Count
-            $ActionType = "Ini File Operation"
-            CountAndReportActions
-            $WEMIniFiles | Table -Columns Name, ActionType, TargetPath, TargetName, TargetValue
-        }
-        Section -Name "Actions - External Tasks" -Style Heading2 {
-            $WEMExternalTasks = Get-WEMExternalTask -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMExternalTasks | Measure-Object).Count
-            $ActionType = "External Task"
-            CountAndReportActions            
-            $WEMExternalTasks | Table -Columns Name, TargetPath, TargetArguments
-        }
-        Section -Name "Actions - File System Operations" -Style Heading2 {
-            $WEMFileSystemObjects = Get-WEMFileSystemOp -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMFileSystemObjects | Measure-Object).Count
-            $ActionType = "File System Operation"
-            CountAndReportActions            
-            $WEMFileSystemObjects | Table -Columns Name, ActionType, SourcePath
-        }
-        Section -Name "Actions - User DSNs" -Style Heading2 {
-            $WEMUserDSNs = Get-WEMUserDSN -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMUserDSNs | Measure-Object).Count
-            $ActionType = "User DSN"
-            CountAndReportActions 
-            $WEMUserDSNs | Table -Columns Name, ActionType, TargetName
-        }
-        Section -Name "Actions - File Associations" -Style Heading2 {
-            $WEMFileAssocs = Get-WEMFileAssoc -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMFileAssocs | Measure-Object).Count
-            $ActionType = "File Association"
-            CountAndReportActions 
-            $WEMFileAssocs | Table -Columns Name, FileExtension, ProgramId, TargetPath
+        catch {
+            Write-Warning "$Module module failed to install. Please install the module manually" -Verbose
+            Break #<- Fix This!
         }
     }
-    PageBreak
-    #endregion
-    #region Filters
-    Section -Name "WEM Filters" -Style Heading1 {
-        Section -Name "WEM Conditions" -Style Heading2 {
-            $WEMConditions = Get-WEMCondition -Connection $Connection -IdSite $Site -Verbose
-            Paragraph "The following Conditions have been defined"
-            $WEMConditions | Table  -List -Columns Name, Description, State, Type, TestValue, TestResult
-        }
-        Section -Name "WEM Rules" -Style Heading2 {
-            #$WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose
-            $WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose | Select-Object Name,Description,@{Name='Conditions';Expression={$_.Conditions -join '; '}},State
-            Paragraph "The following Rules have been defined"
-            $WEMRules | Table -Columns Name, Conditions
+}
+
+function CountAndReportAssignments {
+    if ($Count -ne 0) {
+        Paragraph "There are $($Count) $($AssignmentType) Assignments. The following $($AssignmentType) Assignments are in place"
+    }
+    else {
+        Paragraph "There are no $($AssignmentType) Assignments"
+    }
+}
+
+function CountAndReportActions {
+    if ($Count -ne "0") {
+        Paragraph "There are $($Count) $($ActionType) Actions. The following $($ActionType) Actions have been defined"
+    }
+    else {
+        Paragraph "There are no $($ActionType) Actions defined"
+    }
+}
+
+Function Convert-Hashtable {
+    Param(
+        [Parameter()]
+        $Hashtable
+    )
+    if (($Hashtable).Count -gt 1) {
+        ForEach ($item in $Hashtable.GetEnumerator()) {
+            $Name = $null
+            ForEach ($Record in $DescriptionTable.GetEnumerator()) {
+                if ($Item.Name -eq $Record.Name) { $Name = $Record.Value } 
+                $PSObject = [PSCustomObject] @{
+                    Name        = $Item.Key
+                    Description = $Name
+                    State       = if ($Item.Value -eq 0) { "Disabled" } elseif ($Item.Value -eq 1) { "Enabled" } elseif ($Item.Value -ne 0 -and $Item.Value -ne 1) { $Item.Value }
+                } 
+            }
+            Write-Output -InputObject $PSObject
         }
     }
-    PageBreak
-    #endregion
-    #region Assignments
-    Section -Name "WEM Action Assignments" -Style Heading1 {
-        Section -Name "Assignments - Action Groups" -Style Heading2 {
-            $WEMActionGroupAssignments = Get-WEMActionGroupAssignment -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMActionGroupAssignments | Measure-Object).Count
-            $AssignmentType = "Action Group"
-            CountAndReportAssignments
-            $WEMActionGroupAssignments | Table -Columns AssignedObject, ADObject, Rule
+    elseif (($Hashtable).Count -eq 1) {
+        ForEach ($item in $Hashtable) {
+            $Name = $null
+            ForEach ($Record in $DescriptionTable.GetEnumerator()) {
+                if ($Item.Name -eq $Record.Name) { $Name = $Record.Value } 
+                $PSObject = [PSCustomObject] @{
+                    Name        = $Item.Key
+                    Description = $Name
+                    State       = if ($Item.Value -eq 0) { "Disabled" } elseif ($Item.Value -eq 1) { "Enabled" } elseif ($Item.Value -ne 0 -and $Item.Value -ne 1) { $Item.Value }
+                } 
+            }
+            Write-Output -InputObject $PSObject
         }
-        Section -Name "Assignments - Applications" -Style Heading2 {
-            $WEMApplicationAssignments = Get-WEMAppAssignment -Connection $Connection -IdSite $Site -Verbose | Select-Object AssignedObject,ADObject,Rule,@{Name='AssignmentProperties';Expression={$_.AssignmentProperties -join '; '}}
-            $Count = ($WEMApplicationAssignments | Measure-Object).Count
-            $AssignmentType = "Applications"
-            CountAndReportAssignments
-            $WEMApplicationAssignments | Table -Columns AssignedObject, ADObject, Rule, AssignmentProperties
-        }
-        Section -Name "Assignments - Printers" -Style Heading2 {
-            $WEMPrinterAssignments = Get-WEMPrinterAssignment -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMPrinterAssignments | Measure-Object).Count
-            $AssignmentType = "Printer"
-            CountAndReportAssignments
-            $WEMPrinterAssignments | Table -Columns AssignedObject, ADObject, Rule
-        }
-        Section -Name "Assignments - Network Drives" -Style Heading2 {
-            $WEMNetworkDriveAssignments = Get-WEMNetDriveAssignment -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMNetworkDriveAssignments | Measure-Object).Count
-            $AssignmentType = "Network Drive"
-            CountAndReportAssignments
-            $WEMNetworkDriveAssignments | Table -Columns AssignedObject, ADObject, Rule, AssignmentProperties
-        }
-        Section -Name "Assignments - Virtual Drives" -Style Heading2 {
-            $WEMVirtualDriveAssignments = Get-WEMVirtualDriveAssignment -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMVirtualDriveAssignments | Measure-Object).Count
-            $AssignmentType = "Virtual Drive"
-            CountAndReportAssignments
-            $WEMVirtualDriveAssignments | Table -Columns AssignedObject, ADObject, Rule, AssignmentProperties
-        }
-        Section -Name "Assignments - Registry Values" -Style Heading2 {
-            $WEMRegistryValueAssignments = Get-WEMRegistryEntryAssignment -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMRegistryValueAssignments | Measure-Object).Count
-            $AssignmentType = "Registry Value"
-            CountAndReportAssignments
-            $WEMRegistryValueAssignments | Table -Columns AssignedObject, ADObject, Rule
-        }
-        Section -Name "Assignments - Environment Variables" -Style Heading2 {
-            $WEMEnvironmentVariableAssignments = Get-WEMEnvironmentVariableAssignment -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMEnvironmentVariableAssignments | Measure-Object).Count
-            $AssignmentType = "Environment Variable"
-            CountAndReportAssignments
-            $WEMEnvironmentVariableAssignments | Table -Columns AssignedObject, ADObject, Rule
-        }
-        Section -Name "Assignments - Ports" -Style Heading2 {
-            $WEMPortAssignments = Get-WEMPortAssignment -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMPortAssignments | Measure-Object).Count
-            $AssignmentType = "Port"
-            CountAndReportAssignments
-            $WEMPortAssignments | Table -Columns AssignedObject, ADObject, Rule
-        }
-        Section -Name "Assignments - Ini File Operations" -Style Heading2 {
-            $WEMIniFileAssignments = Get-WEMIniFileOperationAssignment -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMIniFileAssignments | Measure-Object).Count
-            $AssignmentType = "Ini File Operation"
-            CountAndReportAssignments
-            $WEMIniFileAssignments | Table -Columns AssignedObject, ADObject, Rule
-        }
-        Section -Name "Assignments - External Tasks" -Style Heading2 {
-            $WEMExternalTaskAssignments = Get-WEMExternalTaskAssignment -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMExternalTaskAssignments | Measure-Object).Count
-            $AssignmentType = "External Task"
-            CountAndReportAssignments
-            $WEMExternalTaskAssignments | table -Columns AssignedObject, ADObject, Rule
-        }
-        Section -Name "Assignments - File System Operations" -Style Heading2 {
-            $WEMFileSystemObjectAssignments = Get-WEMFileSystemOpAssignment -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMFileSystemObjectAssignments | Measure-Object).Count
-            $AssignmentType = "File System Operations"
-            CountAndReportAssignments
-            $WEMFileSystemObjectAssignments | Table -Columns AssignedObject, ADObject, Rule
-        }
-        Section -Name "Assignments - User DSNs" -Style Heading2 {
-            $WEMUserDSNAssignments = Get-WEMUserDSNAssignment -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMUserDSNAssignments | Measure-Object).Count
-            $AssignmentType = "User DSN"
-            CountAndReportAssignments
-            $WEMUserDSNAssignments | Table -Columns AssignedObject, ADObject, Rule
-        }
-        Section -Name "Assignments - File Associations" -Style Heading2 {
-            $WEMFileAssocAssignments = Get-WEMFileAssocAssignment -Connection $Connection -IdSite $Site -Verbose
-            $Count = ($WEMFileAssocAssignments | Measure-Object).Count
-            $AssignmentType = "File Association"
-            CountAndReportAssignments
-            $WEMFileAssocAssignments | Table -Columns AssignedObject, ADObject, Rule
-        }
+    
     }
-    PageBreak
-    #endregion
-    #region System Optimization
-    Section -Name "WEM System Optimization" -Style Heading1 {
-        $WEMSystemOptimization = Get-WEMSystemOptimization -Connection $Connection -IdSite $Site -Verbose
-        Section -Name "CPU Management" -Style Heading2 {
-            # Spikes Protection
-            $SpikesProtectionSettingsList = @("EnableCPUSpikesProtection", 
-                "AutoCPUSpikeProtectionSelected", 
-                "SpikesProtectionCPUUsageLimitPercent",
-                "SpikesProtectionCPUUsageLimitSampleTime",
-                "SpikesProtectionIdlePriorityConstraintTime",
-                "SpikesProtectionCPUCoreLimit",
-                "SpikesProtectionLimitCPUCoreNumber",
-                "CPUSpikesProtectionExcludedProcesses",
-                "EnableIntelligentCpuOptimization",
-                "EnableIntelligentIoOptimization",
-                "ExcludeProcessesFromCPUSpikesProtection"
-            )
-            $WEMSpikesProtection = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $SpikesProtectionSettingsList } | Sort-Object -Property Key
-            Paragraph -Style Heading2 "CPU Spikes Protection"
-            Paragraph "The following configurations relate to CPU Spikes Protection Settings"
-            StandardOutput -OutputObject $WEMSpikesProtection
-        
-            # CPU Priority
-            $CPUPrioritySettingsList = @("EnableProcessesCpuPriority",
-                "ProcessesCpuPriorityList"
-            )
-            $WEMCPUPriority = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $CPUPrioritySettingsList } | Sort-Object -Property Key
-            Paragraph -Style Heading2 "CPU Priority"
-            Paragraph "The following configurations relate to CPU Priority Settings"
-            StandardOutput -OutputObject $WEMCPUPriority
+}
 
-            # CPU Affinity
-            $CPUAffinitySettingsList = @("EnableProcessesAffinity", 
-                "ProcessesAffinityList"
-            )
-            $WEMCPUAffinity = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $CPUAffinitySettingsList } | Sort-Object -Property Key
-            Paragraph -Style Heading2 "CPU Affinity"
-            Paragraph "The following configurations relate to CPU Affinity Settings"
-            StandardOutput -OutputObject $WEMCPUAffinity
+function StandardOutput {
+    param (
+        [Parameter()] $OutputObject,
+        [Parameter()] [int] $Col1 = 40,
+        [Parameter()] [int] $Col2 = 40,
+        [Parameter()] [int] $Col3 = 20
+    )
+    $OutputObject = Convert-Hashtable -Hashtable $OutputObject
+    $OutputObject | Table -Columns Name, Description, State -Headers Setting, Description, Value -ColumnWidths $Col1, $col2, $Col3
+    BlankLine
+}
+#endregion
 
-            # CPU Clamping
-            $CPUClampingSettingsList = @("EnableProcessesClamping",
-                "ProcessesClampingList"
-            )
-            $WEMCPUClamping = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $CPUClampingSettingsList } | Sort-Object -Property Key
-            Paragraph -Style Heading2 "CPU Clamping"
-            Paragraph "The following configurations relate to CPU Clamping Settings"
-            StandardOutput -OutputObject $WEMCPUClamping
-        }
-        Section -Name "Memory Management" -Style Heading2 {
-            # Memory Management
-            $WEMMemoryManagementSettingsList = @("EnableMemoryWorkingSetOptimization",
-                "ExcludeProcessesFromMemoryWorkingSetOptimization",
-                "MemoryWorkingSetOptimizationExcludedProcesses",
-                "MemoryWorkingSetOptimizationIdleStateLimitPercent",
-                "MemoryWorkingSetOptimizationIdleSampleTime"
-            )
-            $WEMMemoryManagement = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $WEMMemoryManagementSettingsList } | Sort-Object -Property Key
-            Paragraph -Style Heading2 "Memory Management"
-            Paragraph "The following configurations relate to Working Set Optimizatoin Settings"
-            StandardOutput -OutputObject $WEMMemoryManagement
-        }
-        Section -Name "IO Management" -Style Heading2 {
-            # IO Management
-            $WEMIOManagementSettinglesList = @("EnableProcessesIoPriority",
-                "ProcessesIoPriorityList"
-            )
-            $WEMIOManagement = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $WEMIOManagementSettinglesList } | Sort-Object -Property Key
-            Paragraph -Style Heading2 "I/O Management"
-            Paragraph "The following configurations relate to I/O Management Settings"
-            StandardOutput -OutputObject $WEMIOManagement
-        }
-        Section -Name "Fast Logoff" -Style Heading2 {
-            # Fast LogOff
-            $WEMFastLogOffSettingsList = @("EnableFastLogoff",
-                "ExcludeGroupsFromFastLogoff",
-                "FastLogoffExcludedGroups"
-            )
-            $WEMFastLogOff = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $WEMFastLogOffSettingsList } | Sort-Object -Property Key
-            Paragraph -Style Heading2 "Fast LogOff"
-            Paragraph "The following configurations relate to FastLogOff Settings"
-            StandardOutput -OutputObject $WEMFastLogOff
-        }
-    }
-    PageBreak
-    #endregion
-    #region Policies and Profiles
-    Section -Name "WEM Policies and Profiles" -Style Heading1 {
-        $WEMEnvironmentalSettings = Get-WEMEnvironmentalSettings -Connection $Connection -IdSite $Site -Verbose
-        Section -Name "Environmental Settings" -Style Heading2 {
-            Paragraph "The following Environmental Settings are in place"
-            # Environmental Settings Management
-            Section -Name "Start Menu" -Style Heading2 {
-                Paragraph -Style Heading3 "Environmental Settings Management"
-                $SettingsList = @("processEnvironmentalSettings",
-                    "processEnvironmentalSettingsForAdmins"
-                )
-                $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-                StandardOutput -OutputObject $Settings
+function WriteDoc {
+    [CmdletBinding()]
+    param()
 
-                # Start Menu
-                Paragraph -Style Heading3 "User Interface: Start Menu"
-                $SettingsList = @("HideCommonPrograms",
-                    "RemoveRunFromStartMenu",
-                    "HideAdministrativeTools",
-                    "HideHelp",
-                    "HideFind",
-                    "HideWindowsUpdate",
-                    "LockTaskbar",
-                    "HideSystemClock",
-                    "HideDevicesandPrinters",
-                    "HideTurnOff",
-                    "ForceLogoff",
-                    "Turnoffnotificationareacleanup",
-                    "TurnOffpersonalizedmenus",
-                    "ClearRecentprogramslist"
-                )
-                $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-                StandardOutput -OutputObject $Settings
+    Document "Citrix WEM Documentation" {
 
-                # Appearance
-                Paragraph -Style Heading3 "User Interface: Appearance"
-                $SettingsList = @("SetSpecificThemeFile",
-                    "SpecificThemeFileValue",
-                    "SetVisualStyleFile",
-                    "VisualStyleFileValue",
-                    "SetWallpaper",
-                    "Wallpaper",
-                    "WallpaperStyle",
-                    "SetDesktopBackGroundColor",
-                    "DesktopBackGroundColor"
-                )
-                $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-                StandardOutput -OutputObject $Settings
+        Paragraph -Style Heading1 "Citrix WEM Documentation"
 
-            }
-            Section -Name "Desktop" -Style Heading2 {
-                # Desktop
-                Paragraph -Style Heading3 "User Interface: Desktop"
-                $SettingsList = @("NoMyComputerIcon",
-                    "NoRecycleBinIcon",
-                    "NoMyDocumentsIcon",
-                    "BootToDesktopInsteadOfStart",
-                    "NoPropertiesMyComputer",
-                    "NoPropertiesRecycleBin",
-                    "NoPropertiesMyDocuments",
-                    "HideNetworkIcon",
-                    " HideNetworkConnections",
-                    "DisableTaskMgr"
-                )
-                $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-                StandardOutput -OutputObject $Settings
-
-                #Edge UI
-                Paragraph -Style Heading3 "User Interface: Edge UI" 
-                $SettingsList = @("DisableTLcorner",
-                    "DisableCharmsHint"
-                )
-                $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-                StandardOutput -OutputObject $Settings
-            }
-            Section -Name "Windows Explorer" -Style Heading2 {
-                # Explorer
-                Paragraph -Style Heading3 "User Interface: Explorer"
-                $SettingsList = @("DisableRegistryEditing",
-                    "DisableSilentRegedit",
-                    "DisableCmd",
-                    "DisableCmdScripts",
-                    "RemoveContextMenuManageItem",
-                    "NoNetConnectDisconnect",
-                    "HideLibrairiesInExplorer",
-                    "HideNetworkInExplorer",
-                    "HideControlPanel",
-                    "NoNtSecurity",
-                    "NoViewContextMenu",
-                    "NoTrayContextMenu"
-                )
-                $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-                StandardOutput -OutputObject $Settings
-
-                # Drive Restrictions
-                Paragraph -Style Heading3 "Drive Restrictions"
-                $SettingsList = @("HideSpecifiedDrivesFromExplorer",
-                    "ExplorerHiddenDrives",
-                    "RestrictSpecifiedDrivesFromExplorer",
-                    "ExplorerRestrictedDrives"
-                )
-                $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-                StandardOutput -OutputObject $Settings
-            }
-            Section -Name "Control Panel" -Style Heading2 {
-                # Control Panel
-                $SettingsList = @("NoProgramsCPL",
-                    "RestrictCpl",
-                    "RestrictCplList",
-                    "DisallowCpl",
-                    "DisallowCplList"
-                )
-                $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-                StandardOutput -OutputObject $Settings
-
-            }
-            Section -Name "Known Folders Management" -Style Heading2 {
-                # Known Folders Management
-                $SettingsList = @("DisabledKnownFolders",
-                    "DisableSpecifiedKnownFolders"
-                )
-                $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-                StandardOutput -OutputObject $Settings
-        
-            }
-            Section -Name "SBC / HVD Tuning" -Style Heading2 {
-                # SBC / HVD Tuning
-                $SettingsList = @("DisableDragFullWindows",
-                    "DisableCursorBlink",
-                    "EnableAutoEndTasks",
-                    "WaitToKillAppTimeout",
-                    "SetCursorBlinkRate",
-                    "CursorBlinkRateValue",
-                    "SetMenuShowDelay",
-                    "MenuShowDelayValue",
-                    "SetInteractiveDelay",
-                    "InteractiveDelayValue",
-                    "DisableSmoothScroll",
-                    "DisableMinAnimate"
-                )
-                $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-                StandardOutput -OutputObject $Settings    
-            }
-        }
-        $WEMUSVConfiguration = Get-WEMUSVSettings -Connection $Connection -IdSite $Site -Verbose
-        Section -Name "USV - Processing Settings" -Style Heading2 {
-            Paragraph "The following Microsoft USV Configurations are in place"
+        TOC -Name 'Table of Contents'
+        PageBreak
+        #region Config Sets
+        Section -Name "WEM Configuration Sets" -Style Heading1 {
+            $WEMConfigSets = Get-WEMConfiguration -Connection $Connection -Verbose
+            Paragraph "There are ($($WEMConfigSets.Count) Configuration Sets found in the deployment):"
+            $WEMConfigSets | Table -Columns Name, Description, State -Headers 'Name', 'Description', 'State'
             BlankLine
-            Paragraph "Global USV Processing Settings"
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "processUSVConfiguration" -or $_.Key -Like "processUSVConfigurationForAdmins" } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+            Paragraph "The following documentation outlines the $($WEMSite.Name) Configuration Set"
         }
-        Section -Name "USV - Microsoft Profiles" -Style Heading2 {
-            $SettingsList = @("DisableSlowLinkDetect",
-                "RDSHomeDriveLetter",
-                "SlowLinkProfileDefault",
-                "RDSHomeDrivePath",
-                "DeleteRoamingCachedProfiles",
-                "SetRDSHomeDrivePath",
-                "RoamingProfilesFoldersExclusions",
-                "SetRoamingProfilesFoldersExclusions",
-                "CompatibleRUPSecurity",
-                "SetRDSRoamingProfilesPath",
-                "SetWindowsRoamingProfilesPath",
-                "RDSRoamingProfilesPath",
-                "WindowsRoamingProfilesPath",
-                "AddAdminGroupToRUP"
-            )
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            Paragraph "The following Microsoft Roaming Profile Configurations are in place"
-            StandardOutput -OutputObject $Settings
+        PageBreak
+        #endregion
+        #region Actions
+        Section -Name "WEM Actions" -Style Heading1 {
+            Section -Name "Actions - Action Groups" -Style Heading2 {
+                $WEMActionGroups = Get-WEMActionGroup -Connection $Connection -IdSite $Site -Verbose | Select-Object Name, Description, @{Name = 'Actions'; Expression = { $_.Actions -join '; ' } }, State
+                $Count = ($WEMActionGroups | Measure-Object).Count
+                $ActionType = "Action Group"
+                CountAndReportActions
+                if ($Count -ne 0) {
+                    $WEMActionGroups | Table -Columns Name, Actions, State
+                }
+            }
+            Section -Name "Actions - Applications" -Style Heading2 {
+                $WEMApplications = Get-WEMApplication -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMApplications | Measure-Object).Count
+                $ActionType = "Application"
+                CountAndReportActions
+                if ($Count -ne 0) {
+                    $WEMApplications | Table -Columns Name, Description, Type
+                }
+            }
+            Section -Name "Actions - Printers" -Style Heading2 {
+                $WEMPrinters = Get-WEMPrinter -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMPrinters | Measure-Object).Count
+                $ActionType = "Printer"
+                CountAndReportActions
+                if ($Count -ne 0) {
+                    $WEMPrinters | Table -Columns Name, DisplayName, TargetPath, ActionType
+                }
+            }
+            Section -Name "Actions - Network Drives" -Style Heading2 {
+                $WEMNetworkDrives = Get-WEMNetDrive -Connection $Connection -IdSite $site -Verbose
+                $Count = ($WEMNetworkDrives | Measure-Object).Count
+                $ActionType = "Network Drive"
+                CountAndReportActions
+                if ($Count -ne 0) {
+                    $WEMNetworkDrives | Table -Columns Name, DisplayName, Description, TargetPath
+                }
+            }
+            Section -Name "Actions - Virtual Drives" -Style Heading2 {
+                $WEMVirtualDrives = Get-WEMVirtualDrive -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMVirtualDrives | Measure-Object).Count
+                $ActionType = "Virtual Drive"
+                CountAndReportActions
+                if ($Count -ne 0) {
+                    $WEMVirtualDrives | Table -Columns Name, Description, ActionType, TargetPath, SetAsHomeDriveEnabled
+                }
+            }
+            Section -Name "Actions - Registry Values" -Style Heading2 {
+                $WEMRegistryValues = Get-WEMRegistryEntry -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMRegistryValues | Measure-Object).Count
+                $ActionType = "Registry Value"
+                CountAndReportActions
+                if ($Count -ne 0) {            
+                    $WEMRegistryValues | Table -Columns Name, Description, ActionType, State
+                }
+            }
+            Section -Name "Actions - Environment Variables" -Style Heading2 {
+                $WEMEnvironmentVariables = Get-WEMEnvironmentVariable -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMEnvironmentVariables | Measure-Object).Count
+                $ActionType = "Environment Variable"
+                CountAndReportActions
+                if ($Count -ne 0) {
+                    $WEMEnvironmentVariables | Table -Columns Name, VariableName, VariableValue, VariableType
+                }
+            }
+            Section -Name "Actions - Ports" -Style Heading2 {
+                $WEMPorts = Get-WEMPort -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMPorts | Measure-Object).Count
+                $ActionType = "Port"
+                CountAndReportActions
+                if ($Count -ne 0) {
+                    $WEMPorts | Table -Columns Name, Description, PortName, TargetPath
+                }
+            }
+            Section -Name "Actions - Ini File Operations" -Style Heading2 {
+                $WEMIniFiles = Get-WEMIniFileOperation -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMIniFiles | Measure-Object).Count
+                $ActionType = "Ini File Operation"
+                CountAndReportActions
+                if ($Count -ne 0) {
+                    $WEMIniFiles | Table -Columns Name, ActionType, TargetPath, TargetName, TargetValue
+                }
+            }
+            Section -Name "Actions - External Tasks" -Style Heading2 {
+                $WEMExternalTasks = Get-WEMExternalTask -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMExternalTasks | Measure-Object).Count
+                $ActionType = "External Task"
+                CountAndReportActions  
+                if ($Count -ne 0) {          
+                    $WEMExternalTasks | Table -Columns Name, TargetPath, TargetArguments
+                }
+            }
+            Section -Name "Actions - File System Operations" -Style Heading2 {
+                $WEMFileSystemObjects = Get-WEMFileSystemOp -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMFileSystemObjects | Measure-Object).Count
+                $ActionType = "File System Operation"
+                CountAndReportActions            
+                if ($Count -ne 0) {
+                    $WEMFileSystemObjects | Table -Columns Name, ActionType, SourcePath
+                }
+            }
+            Section -Name "Actions - User DSNs" -Style Heading2 {
+                $WEMUserDSNs = Get-WEMUserDSN -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMUserDSNs | Measure-Object).Count
+                $ActionType = "User DSN"
+                CountAndReportActions
+                if ($Count -ne 0) { 
+                    $WEMUserDSNs | Table -Columns Name, ActionType, TargetName
+                }
+            }
+            Section -Name "Actions - File Associations" -Style Heading2 {
+                $WEMFileAssocs = Get-WEMFileAssoc -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMFileAssocs | Measure-Object).Count
+                $ActionType = "File Association"
+                CountAndReportActions
+                if ($Count -ne 0) { 
+                    $WEMFileAssocs | Table -Columns Name, FileExtension, ProgramId, TargetPath
+                }
+            }
         }
-        Section -Name "USV - Folder Redirection Configuration" -Style Heading2 {
-            # Folder Redirection Configuration
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "processFoldersRedirectionConfiguration" -or $_.Key -Like "DeleteLocalRedirectedFolders" }
-            Paragraph -Style Heading3 "Folder Redirection - Configuration"
-            Paragraph "The following Settings Outline the Folder Redirection Configuration"
-            StandardOutput -OutputObject $Settings
-
-            # Redirection Settings
-            $SettingsList = @("processDesktopRedirection",
-                "processPersonalRedirection",
-                "processPicturesRedirection",
-                "processMusicRedirection",
-                "processVideoRedirection",
-                "processStartMenuRedirection",
-                "processFavoritesRedirection",
-                "processAppDataRedirection",
-                "processContactsRedirection",
-                "processDownloadsRedirection",
-                "processLinksRedirection",
-                "processSearchesRedirection"
-            )
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            Paragraph -Style Heading3 "Folder Redirection - Processing Settings"
-            Paragraph "The following Settings Outline the Folder Redirection Processing Settings"
-            StandardOutput -OutputObject $Settings
-
-            # Desktop Settings
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "DesktopRedirectedPath" }
-            Paragraph -Style Heading3 "Folder Redirection - Desktop"
-            Paragraph "The following Settings Outline the Desktop Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
-
-            # Documents Settings
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "PersonalRedirectedPath" }
-            Paragraph -Style Heading3 "Folder Redirection - Documents"
-            Paragraph "The following Settings Outline the Documents Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
-
-            # Pictures Settings
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "PicturesRedirectedPath" -or $_.Key -Like "MyPicturesFollowsDocuments" }
-            Paragraph -Style Heading3 "Folder Redirection - Pictures"
-            Paragraph "The following Settings Outline the Pictures Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
-
-            # Music
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "MusicRedirectedPath" -or $_.Key -Like "MyMusicFollowsDocuments" } | Sort-Object -Descending
-            Paragraph -Style Heading3 "Folder Redirection - Music"
-            Paragraph "The following Settings Outline the Music Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
-
-            # Videos
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "VideoRedirectedPath" -or $_.Key -Like "MyVideoFollowsDocuments" }
-            Paragraph -Style Heading3 "Folder Redirection - Videos"
-            Paragraph "The following Settings Outline the Videos Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
-
-            # Start
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "StartMenuRedirectedPath" }
-            Paragraph -Style Heading3 "Folder Redirection - Start Menu"
-            Paragraph "The following Settings Outline the Start Menu Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
-
-            # Favorites
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "FavoritesRedirectedPath" }
-            Paragraph -Style Heading3 "Folder Redirection - Favorites"
-            Paragraph "The following Settings Outline the Favorites Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
-
-            # AppData
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "AppDataRedirectedPath" }
-            Paragraph -Style Heading3 "Folder Redirection - AppData"
-            Paragraph "The following Settings Outline the AppData Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
-
-            # Contacts
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "ContactsRedirectedPath" }
-            Paragraph -Style Heading3 "Folder Redirection - Contacts"
-            Paragraph "The following Settings Outline the Contacts Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
-
-            # Downloads
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "DownloadsRedirectedPath" }
-            Paragraph -Style Heading3 "Folder Redirection - Downloads"
-            Paragraph "The following Settings Outline the Downloads Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
-
-            # Links
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "LinksRedirectedPath" }
-            Paragraph -Style Heading3 "Folder Redirection - Links"
-            Paragraph "The following Settings Outline the Links Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
-
-            # Searches
-            $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "SearchesRedirectedPath" }
-            Paragraph -Style Heading3 "Folder Redirection - Searches"
-            Paragraph "The following Settings Outline the Searches Folder Redirection Settings"
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+        PageBreak
+        #endregion
+        #region Filters
+        Section -Name "WEM Filters" -Style Heading1 {
+            Section -Name "WEM Conditions" -Style Heading2 {
+                $WEMConditions = Get-WEMCondition -Connection $Connection -IdSite $Site -Verbose
+                Paragraph "The following Conditions have been defined"
+                $WEMConditions | Table  -List -Columns Name, Description, State, Type, TestValue, TestResult
+            }
+            Section -Name "WEM Rules" -Style Heading2 {
+                #$WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose
+                $WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose | Select-Object Name, Description, @{Name = 'Conditions'; Expression = { $_.Conditions -join '; ' } }, State
+                Paragraph "The following Rules have been defined"
+                $WEMRules | Table -Columns Name, Conditions
+            }
         }
-        $WEMCitrixUPM = Get-WEMUPMSettings -Connection $Connection -IdSite $Site -Verbose
-        Section -Name "Citrix Profile Management" -Style Heading2 {
-            Paragraph "The following Citrix Profile Management Configuration is in place"
-            # Citrix Profile Management Enabled
-            BlankLine
-            Paragraph -Style Heading3 "UPM - Profile Management Configuration"
-            $SettingsList = @("UPMManagementEnabled")
-            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList }
-            StandardOutput -OutputObject $Settings
-
-            # Citrix Profile Management
-            Paragraph -Style Heading3 "UPM - Citrix profile Management"
-            $SettingsList = @("ServiceActive",
-                "SetProcessedGroups",
-                "ProcessedGroupsList",
-                "SetExcludedGroups",
-                "ExcludedGroupsList",
-                "ProcessAdmins",
-                "SetPathToUserStore",
-                "PathToUserStore",
-                "MigrateUserStore",
-                "MigrateUserStorePath",
-                "PSMidSessionWriteBack",
-                "PSMidSessionWriteBackReg",
-                "OfflineSupport"
-            )
-            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
-
-            # Profile Handling
-            Paragraph -Style Heading3 "UPM - Profile Handling"
-            $SettingsList = @("DeleteCachedProfilesOnLogoff",
-                "SetProfileDeleteDelay",
-                "ProfileDeleteDelay",
-                "SetMigrateWindowsProfilesToUserStore",
-                "MigrateWindowsProfilesToUserStore",
-                "AutomaticMigrationEnabled",
-                "SetLocalProfileConflictHandling",
-                "LocalProfileConflictHandling",
-                "SetTemplateProfilePath",
-                "TemplateProfilePath",
-                "TemplateProfileOverridesLocalProfile",
-                "TemplateProfileOverridesRoamingProfile",
-                "TemplateProfileIsMandatory"
-            )
-            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
-
-            # Advanced Settings
-            Paragraph -Style Heading3 "UPM - Advanced Settings"
-            $SettingsList = @("SetLoadRetries",
-                "LoadRetries",
-                "XenAppOptimizationEnabled",
-                "XenAppOptimizationPath",
-                "SetUSNDBPath",
-                "USNDBPath",
-                "ProcessCookieFiles",
-                "DeleteRedirectedFolders",
-                "DisableDynamicConfig",
-                "LogoffRatherThanTempProfile",
-                "CEIPEnabled",
-                "OutlookSearchRoamingEnabled",
-                "SearchBackupRestoreEnabled"
-            )
-            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
-
-            # Log Settings
-            Paragraph -Style Heading3 "UPM - Log Settings"
-            $SettingsList = @("LoggingEnabled",
-                "SetLogLevels",
-                "LogLevels",
-                "SetMaxLogSize",
-                "MaxLogSize",
-                "SetPathToLogFile",
-                "PathToLogFile"
-            )
-            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
-
-            # Registy
-            Paragraph -Style Heading3 "UPM - Registry"
-            $SettingsList = @("LastKnownGoodRegistry",
-                "EnableDefaultExclusionListRegistry",
-                "ExclusionDefaultRegistry01",
-                "ExclusionDefaultRegistry02",
-                "ExclusionDefaultRegistry03",
-                "SetExclusionListRegistry",
-                "ExclusionListRegistry",
-                "SetInclusionListRegistry",
-                "InclusionListRegistry"
-            )
-            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
-
-            # File System
-            Paragraph -Style Heading3 "UPM - File System"
-            $SettingsList = @("EnableLogonExclusionCheck",
-                "LogonExclusionCheck",
-                "EnableDefaultExclusionListDirectories",
-                "ExclusionDefaultDir01",
-                "ExclusionDefaultDir02",
-                "ExclusionDefaultDir03",
-                "ExclusionDefaultDir04",
-                "ExclusionDefaultDir05",
-                "ExclusionDefaultDir06",
-                "ExclusionDefaultDir07",
-                "ExclusionDefaultDir09",
-                "ExclusionDefaultDir08",
-                "ExclusionDefaultDir10",
-                "ExclusionDefaultDir11",
-                "ExclusionDefaultDir12",
-                "ExclusionDefaultDir13",
-                "ExclusionDefaultDir14",
-                "ExclusionDefaultDir15",
-                "ExclusionDefaultDir16",
-                "ExclusionDefaultDir17",
-                "ExclusionDefaultDir18",
-                "ExclusionDefaultDir19",
-                "ExclusionDefaultDir20",
-                "ExclusionDefaultDir21",
-                "ExclusionDefaultDir22",
-                "ExclusionDefaultDir23",
-                "ExclusionDefaultDir24",
-                "ExclusionDefaultDir25",
-                "ExclusionDefaultDir26",
-                "ExclusionDefaultDir27",
-                "ExclusionDefaultDir28",
-                "ExclusionDefaultDir29",
-                "ExclusionDefaultDir30",
-                "SetSyncExclusionListFiles",
-                "SyncExclusionListFiles",
-                "SetSyncExclusionListDir",
-                "SyncExclusionListDir"
-            )
-            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 30 -Col3 40
-
-            # Synchronization
-            Paragraph -Style Heading3 "UPM - Synchronization"
-            $SettingsList = @("SetSyncDirList",
-                "SyncDirList",
-                "SetSyncFileList",
-                "SyncFileList",
-                "SetMirrorFoldersList",
-                "MirrorFoldersList",
-                "SetProfileContainerList",
-                "ProfileContainerList",
-                "SetLargeFileHandlingList",
-                "LargeFileHandlingList"
-            )
-            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings -Col1 30 -Col2 30 -Col3 40
-
-            # Streamed User profiles
-            Paragraph -Style Heading3 "UPM - Streamed User profiles"
-            $SettingsList = @("PSEnabled",
-                "PSAlwaysCache",
-                "PSAlwaysCacheSize",
-                "SetPSPendingLockTimeout",
-                "PSPendingLockTimeout",
-                "SetPSUserGroupsList",
-                "PSUserGroupsList",
-                "EnableStreamingExclusionList",
-                "StreamingExclusionList"
-            )
-            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
-
-            # Streamed User profiles
-            Paragraph -Style Heading3 "UPM - Cross Platform Settings"
-            $SettingsList = @("CPEnabled",
-                "SetCPUserGroupList",
-                "CPUserGroupList",
-                "SetCPSchemaPath",
-                "CPSchemaPath",
-                "SetCPPath",
-                "CPPath",
-                "CPMigrationFromBaseProfileToCPStore"
-            )
-            $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+        PageBreak
+        #endregion
+        #region Assignments
+        Section -Name "WEM Action Assignments" -Style Heading1 {
+            Section -Name "Assignments - Action Groups" -Style Heading2 {
+                $WEMActionGroupAssignments = Get-WEMActionGroupAssignment -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMActionGroupAssignments | Measure-Object).Count
+                $AssignmentType = "Action Group"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMActionGroupAssignments | Table -Columns AssignedObject, ADObject, Rule
+                }
+            }
+            Section -Name "Assignments - Applications" -Style Heading2 {
+                $WEMApplicationAssignments = Get-WEMAppAssignment -Connection $Connection -IdSite $Site -Verbose | Select-Object AssignedObject, ADObject, Rule, @{Name = 'AssignmentProperties'; Expression = { $_.AssignmentProperties -join '; ' } }
+                $Count = ($WEMApplicationAssignments | Measure-Object).Count
+                $AssignmentType = "Applications"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMApplicationAssignments | Table -Columns AssignedObject, ADObject, Rule, AssignmentProperties
+                }
+            }
+            Section -Name "Assignments - Printers" -Style Heading2 {
+                $WEMPrinterAssignments = Get-WEMPrinterAssignment -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMPrinterAssignments | Measure-Object).Count
+                $AssignmentType = "Printer"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMPrinterAssignments | Table -Columns AssignedObject, ADObject, Rule
+                }
+            }
+            Section -Name "Assignments - Network Drives" -Style Heading2 {
+                $WEMNetworkDriveAssignments = Get-WEMNetDriveAssignment -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMNetworkDriveAssignments | Measure-Object).Count
+                $AssignmentType = "Network Drive"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMNetworkDriveAssignments | Table -Columns AssignedObject, ADObject, Rule, AssignmentProperties
+                }
+            }
+            Section -Name "Assignments - Virtual Drives" -Style Heading2 {
+                $WEMVirtualDriveAssignments = Get-WEMVirtualDriveAssignment -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMVirtualDriveAssignments | Measure-Object).Count
+                $AssignmentType = "Virtual Drive"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMVirtualDriveAssignments | Table -Columns AssignedObject, ADObject, Rule, AssignmentProperties
+                }
+            }
+            Section -Name "Assignments - Registry Values" -Style Heading2 {
+                $WEMRegistryValueAssignments = Get-WEMRegistryEntryAssignment -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMRegistryValueAssignments | Measure-Object).Count
+                $AssignmentType = "Registry Value"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMRegistryValueAssignments | Table -Columns AssignedObject, ADObject, Rule
+                }
+            }
+            Section -Name "Assignments - Environment Variables" -Style Heading2 {
+                $WEMEnvironmentVariableAssignments = Get-WEMEnvironmentVariableAssignment -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMEnvironmentVariableAssignments | Measure-Object).Count
+                $AssignmentType = "Environment Variable"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMEnvironmentVariableAssignments | Table -Columns AssignedObject, ADObject, Rule
+                }
+            }
+            Section -Name "Assignments - Ports" -Style Heading2 {
+                $WEMPortAssignments = Get-WEMPortAssignment -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMPortAssignments | Measure-Object).Count
+                $AssignmentType = "Port"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMPortAssignments | Table -Columns AssignedObject, ADObject, Rule
+                }
+            }
+            Section -Name "Assignments - Ini File Operations" -Style Heading2 {
+                $WEMIniFileAssignments = Get-WEMIniFileOperationAssignment -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMIniFileAssignments | Measure-Object).Count
+                $AssignmentType = "Ini File Operation"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMIniFileAssignments | Table -Columns AssignedObject, ADObject, Rule
+                }
+            }
+            Section -Name "Assignments - External Tasks" -Style Heading2 {
+                $WEMExternalTaskAssignments = Get-WEMExternalTaskAssignment -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMExternalTaskAssignments | Measure-Object).Count
+                $AssignmentType = "External Task"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMExternalTaskAssignments | table -Columns AssignedObject, ADObject, Rule
+                }
+            }
+            Section -Name "Assignments - File System Operations" -Style Heading2 {
+                $WEMFileSystemObjectAssignments = Get-WEMFileSystemOpAssignment -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMFileSystemObjectAssignments | Measure-Object).Count
+                $AssignmentType = "File System Operations"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMFileSystemObjectAssignments | Table -Columns AssignedObject, ADObject, Rule
+                }
+            }
+            Section -Name "Assignments - User DSNs" -Style Heading2 {
+                $WEMUserDSNAssignments = Get-WEMUserDSNAssignment -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMUserDSNAssignments | Measure-Object).Count
+                $AssignmentType = "User DSN"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMUserDSNAssignments | Table -Columns AssignedObject, ADObject, Rule
+                }
+            }
+            Section -Name "Assignments - File Associations" -Style Heading2 {
+                $WEMFileAssocAssignments = Get-WEMFileAssocAssignment -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMFileAssocAssignments | Measure-Object).Count
+                $AssignmentType = "File Association"
+                CountAndReportAssignments
+                if ($Count -ne 0) {
+                    $WEMFileAssocAssignments | Table -Columns AssignedObject, ADObject, Rule
+                }
+            }
         }
-    }
-    PageBreak
-    #endregion
-    #region Security
-    Section -Name "WEM Security" -Style Heading1 {
-        $WEMSystemOptimization = Get-WEMSystemOptimization -Connection $Connection -IdSite $Site -Verbose
+        PageBreak
+        #endregion
+        #region System Optimization
+        Section -Name "WEM System Optimization" -Style Heading1 {
+            $WEMSystemOptimization = Get-WEMSystemOptimization -Connection $Connection -IdSite $Site -Verbose
+            Section -Name "CPU Management" -Style Heading2 {
+                # Spikes Protection
+                $SpikesProtectionSettingsList = @("EnableCPUSpikesProtection", 
+                    "AutoCPUSpikeProtectionSelected", 
+                    "SpikesProtectionCPUUsageLimitPercent",
+                    "SpikesProtectionCPUUsageLimitSampleTime",
+                    "SpikesProtectionIdlePriorityConstraintTime",
+                    "SpikesProtectionCPUCoreLimit",
+                    "SpikesProtectionLimitCPUCoreNumber",
+                    "CPUSpikesProtectionExcludedProcesses",
+                    "EnableIntelligentCpuOptimization",
+                    "EnableIntelligentIoOptimization",
+                    "ExcludeProcessesFromCPUSpikesProtection"
+                )
+                $WEMSpikesProtection = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $SpikesProtectionSettingsList } | Sort-Object -Property Key
+                Paragraph -Style Heading2 "CPU Spikes Protection"
+                Paragraph "The following configurations relate to CPU Spikes Protection Settings"
+                StandardOutput -OutputObject $WEMSpikesProtection
         
-        Section -Name "Process Management" -Style Heading2 {
-            #Security Settings
-            Paragraph "The following configurations relate to Process Management Settings"
-            $SettingsList = @("EnableProcessesManagement")
-            $Settings = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+                # CPU Priority
+                $CPUPrioritySettingsList = @("EnableProcessesCpuPriority",
+                    "ProcessesCpuPriorityList"
+                )
+                $WEMCPUPriority = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $CPUPrioritySettingsList } | Sort-Object -Property Key
+                Paragraph -Style Heading2 "CPU Priority"
+                Paragraph "The following configurations relate to CPU Priority Settings"
+                StandardOutput -OutputObject $WEMCPUPriority
 
-            # Process Blacklist
-            Paragraph -Style Heading2 "Process Blacklist"
-            Paragraph "The following configurations relate to Process Blacklist Settings"
-            $SettingsList = @("EnableProcessesBlackListing",
-                "ProcessesManagementBlackListedProcesses",
-                "ProcessesManagementBlackListExcludeLocalAdministrators",
-                "ProcessesManagementBlackListExcludeSpecifiedGroups",
-                "ProcessesManagementBlackListExcludedSpecifiedGroupsList"
-            )
-            $Settings = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+                # CPU Affinity
+                $CPUAffinitySettingsList = @("EnableProcessesAffinity", 
+                    "ProcessesAffinityList"
+                )
+                $WEMCPUAffinity = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $CPUAffinitySettingsList } | Sort-Object -Property Key
+                Paragraph -Style Heading2 "CPU Affinity"
+                Paragraph "The following configurations relate to CPU Affinity Settings"
+                StandardOutput -OutputObject $WEMCPUAffinity
 
-            #Process Whielist
-            Paragraph -Style Heading2 "Process Whitelist"
-            Paragraph "The following configurations relate to Process Whitelist Settings"
-            $SettingsList = @("EnableProcessesWhiteListing",
-                "ProcessesManagementWhiteListedProcesses",
-                "ProcessesManagementWhiteListExcludeLocalAdministrators",
-                "ProcessesManagementWhiteListExcludeSpecifiedGroups",
-                "ProcessesManagementWhiteListExcludedSpecifiedGroupsList"
-            )
-            $Settings = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+                # CPU Clamping
+                $CPUClampingSettingsList = @("EnableProcessesClamping",
+                    "ProcessesClampingList"
+                )
+                $WEMCPUClamping = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $CPUClampingSettingsList } | Sort-Object -Property Key
+                Paragraph -Style Heading2 "CPU Clamping"
+                Paragraph "The following configurations relate to CPU Clamping Settings"
+                StandardOutput -OutputObject $WEMCPUClamping
+            }
+            Section -Name "Memory Management" -Style Heading2 {
+                # Memory Management
+                $WEMMemoryManagementSettingsList = @("EnableMemoryWorkingSetOptimization",
+                    "ExcludeProcessesFromMemoryWorkingSetOptimization",
+                    "MemoryWorkingSetOptimizationExcludedProcesses",
+                    "MemoryWorkingSetOptimizationIdleStateLimitPercent",
+                    "MemoryWorkingSetOptimizationIdleSampleTime"
+                )
+                $WEMMemoryManagement = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $WEMMemoryManagementSettingsList } | Sort-Object -Property Key
+                Paragraph -Style Heading2 "Memory Management"
+                Paragraph "The following configurations relate to Working Set Optimizatoin Settings"
+                StandardOutput -OutputObject $WEMMemoryManagement
+            }
+            Section -Name "IO Management" -Style Heading2 {
+                # IO Management
+                $WEMIOManagementSettinglesList = @("EnableProcessesIoPriority",
+                    "ProcessesIoPriorityList"
+                )
+                $WEMIOManagement = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $WEMIOManagementSettinglesList } | Sort-Object -Property Key
+                Paragraph -Style Heading2 "I/O Management"
+                Paragraph "The following configurations relate to I/O Management Settings"
+                StandardOutput -OutputObject $WEMIOManagement
+            }
+            Section -Name "Fast Logoff" -Style Heading2 {
+                # Fast LogOff
+                $WEMFastLogOffSettingsList = @("EnableFastLogoff",
+                    "ExcludeGroupsFromFastLogoff",
+                    "FastLogoffExcludedGroups"
+                )
+                $WEMFastLogOff = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $WEMFastLogOffSettingsList } | Sort-Object -Property Key
+                Paragraph -Style Heading2 "Fast LogOff"
+                Paragraph "The following configurations relate to FastLogOff Settings"
+                StandardOutput -OutputObject $WEMFastLogOff
+            }
         }
-        Section -Name "Application Security" -Style Heading2 {   
-            #AppLocker Basics
-            Paragraph "The following configurations relate to AppLocker Settings"
-            $SettingsList = @("AppLockerControllerManagement",
-                "AppLockerControllerReplaceModeOn"
-            )
-            $Settings = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+        PageBreak
+        #endregion
+        #region Policies and Profiles
+        Section -Name "WEM Policies and Profiles" -Style Heading1 {
+            $WEMEnvironmentalSettings = Get-WEMEnvironmentalSettings -Connection $Connection -IdSite $Site -Verbose
+            Section -Name "Environmental Settings" -Style Heading2 {
+                Paragraph "The following Environmental Settings are in place"
+                # Environmental Settings Management
+                Section -Name "Start Menu" -Style Heading2 {
+                    Paragraph -Style Heading3 "Environmental Settings Management"
+                    $SettingsList = @("processEnvironmentalSettings",
+                        "processEnvironmentalSettingsForAdmins"
+                    )
+                    $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                    StandardOutput -OutputObject $Settings
 
-            #AppLocker Settings
-            $AppLockerProcessSettings = Get-WEMAppLockerSettings -Connection $Connection -IdSite $Site -Verbose
-            Paragraph "AppLocker Processing Settings"
-            $SettingsList = @("CollectionExeEnforcementState",
-                "EnableDLLRuleCollection",
-                "CollectionDllEnforcementState",
-                "CollectionMsiEnforcementState",
-                "CollectionScriptEnforcementState",
-                "EnableProcessesAppLocker",
-                "CollectionAppxEnforcementState"
-            )
-            $Settings = $AppLockerProcessSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+                    # Start Menu
+                    Paragraph -Style Heading3 "User Interface: Start Menu"
+                    $SettingsList = @("HideCommonPrograms",
+                        "RemoveRunFromStartMenu",
+                        "HideAdministrativeTools",
+                        "HideHelp",
+                        "HideFind",
+                        "HideWindowsUpdate",
+                        "LockTaskbar",
+                        "HideSystemClock",
+                        "HideDevicesandPrinters",
+                        "HideTurnOff",
+                        "ForceLogoff",
+                        "Turnoffnotificationareacleanup",
+                        "TurnOffpersonalizedmenus",
+                        "ClearRecentprogramslist"
+                    )
+                    $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                    StandardOutput -OutputObject $Settings
+
+                    # Appearance
+                    Paragraph -Style Heading3 "User Interface: Appearance"
+                    $SettingsList = @("SetSpecificThemeFile",
+                        "SpecificThemeFileValue",
+                        "SetVisualStyleFile",
+                        "VisualStyleFileValue",
+                        "SetWallpaper",
+                        "Wallpaper",
+                        "WallpaperStyle",
+                        "SetDesktopBackGroundColor",
+                        "DesktopBackGroundColor"
+                    )
+                    $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                    StandardOutput -OutputObject $Settings
+
+                }
+                Section -Name "Desktop" -Style Heading2 {
+                    # Desktop
+                    Paragraph -Style Heading3 "User Interface: Desktop"
+                    $SettingsList = @("NoMyComputerIcon",
+                        "NoRecycleBinIcon",
+                        "NoMyDocumentsIcon",
+                        "BootToDesktopInsteadOfStart",
+                        "NoPropertiesMyComputer",
+                        "NoPropertiesRecycleBin",
+                        "NoPropertiesMyDocuments",
+                        "HideNetworkIcon",
+                        " HideNetworkConnections",
+                        "DisableTaskMgr"
+                    )
+                    $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                    StandardOutput -OutputObject $Settings
+
+                    #Edge UI
+                    Paragraph -Style Heading3 "User Interface: Edge UI" 
+                    $SettingsList = @("DisableTLcorner",
+                        "DisableCharmsHint"
+                    )
+                    $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                    StandardOutput -OutputObject $Settings
+                }
+                Section -Name "Windows Explorer" -Style Heading2 {
+                    # Explorer
+                    Paragraph -Style Heading3 "User Interface: Explorer"
+                    $SettingsList = @("DisableRegistryEditing",
+                        "DisableSilentRegedit",
+                        "DisableCmd",
+                        "DisableCmdScripts",
+                        "RemoveContextMenuManageItem",
+                        "NoNetConnectDisconnect",
+                        "HideLibrairiesInExplorer",
+                        "HideNetworkInExplorer",
+                        "HideControlPanel",
+                        "NoNtSecurity",
+                        "NoViewContextMenu",
+                        "NoTrayContextMenu"
+                    )
+                    $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                    StandardOutput -OutputObject $Settings
+
+                    # Drive Restrictions
+                    Paragraph -Style Heading3 "Drive Restrictions"
+                    $SettingsList = @("HideSpecifiedDrivesFromExplorer",
+                        "ExplorerHiddenDrives",
+                        "RestrictSpecifiedDrivesFromExplorer",
+                        "ExplorerRestrictedDrives"
+                    )
+                    $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                    StandardOutput -OutputObject $Settings
+                }
+                Section -Name "Control Panel" -Style Heading2 {
+                    # Control Panel
+                    $SettingsList = @("NoProgramsCPL",
+                        "RestrictCpl",
+                        "RestrictCplList",
+                        "DisallowCpl",
+                        "DisallowCplList"
+                    )
+                    $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                    StandardOutput -OutputObject $Settings
+
+                }
+                Section -Name "Known Folders Management" -Style Heading2 {
+                    # Known Folders Management
+                    $SettingsList = @("DisabledKnownFolders",
+                        "DisableSpecifiedKnownFolders"
+                    )
+                    $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                    StandardOutput -OutputObject $Settings
+        
+                }
+                Section -Name "SBC / HVD Tuning" -Style Heading2 {
+                    # SBC / HVD Tuning
+                    $SettingsList = @("DisableDragFullWindows",
+                        "DisableCursorBlink",
+                        "EnableAutoEndTasks",
+                        "WaitToKillAppTimeout",
+                        "SetCursorBlinkRate",
+                        "CursorBlinkRateValue",
+                        "SetMenuShowDelay",
+                        "MenuShowDelayValue",
+                        "SetInteractiveDelay",
+                        "InteractiveDelayValue",
+                        "DisableSmoothScroll",
+                        "DisableMinAnimate"
+                    )
+                    $Settings = $WEMEnvironmentalSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                    StandardOutput -OutputObject $Settings    
+                }
+            }
+            $WEMUSVConfiguration = Get-WEMUSVSettings -Connection $Connection -IdSite $Site -Verbose
+            Section -Name "USV - Processing Settings" -Style Heading2 {
+                Paragraph "The following Microsoft USV Configurations are in place"
+                BlankLine
+                Paragraph "Global USV Processing Settings"
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "processUSVConfiguration" -or $_.Key -Like "processUSVConfigurationForAdmins" } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "USV - Microsoft Profiles" -Style Heading2 {
+                $SettingsList = @("DisableSlowLinkDetect",
+                    "RDSHomeDriveLetter",
+                    "SlowLinkProfileDefault",
+                    "RDSHomeDrivePath",
+                    "DeleteRoamingCachedProfiles",
+                    "SetRDSHomeDrivePath",
+                    "RoamingProfilesFoldersExclusions",
+                    "SetRoamingProfilesFoldersExclusions",
+                    "CompatibleRUPSecurity",
+                    "SetRDSRoamingProfilesPath",
+                    "SetWindowsRoamingProfilesPath",
+                    "RDSRoamingProfilesPath",
+                    "WindowsRoamingProfilesPath",
+                    "AddAdminGroupToRUP"
+                )
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                Paragraph "The following Microsoft Roaming Profile Configurations are in place"
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "USV - Folder Redirection Configuration" -Style Heading2 {
+                # Folder Redirection Configuration
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "processFoldersRedirectionConfiguration" -or $_.Key -Like "DeleteLocalRedirectedFolders" }
+                Paragraph -Style Heading3 "Folder Redirection - Configuration"
+                Paragraph "The following Settings Outline the Folder Redirection Configuration"
+                StandardOutput -OutputObject $Settings
+
+                # Redirection Settings
+                $SettingsList = @("processDesktopRedirection",
+                    "processPersonalRedirection",
+                    "processPicturesRedirection",
+                    "processMusicRedirection",
+                    "processVideoRedirection",
+                    "processStartMenuRedirection",
+                    "processFavoritesRedirection",
+                    "processAppDataRedirection",
+                    "processContactsRedirection",
+                    "processDownloadsRedirection",
+                    "processLinksRedirection",
+                    "processSearchesRedirection"
+                )
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                Paragraph -Style Heading3 "Folder Redirection - Processing Settings"
+                Paragraph "The following Settings Outline the Folder Redirection Processing Settings"
+                StandardOutput -OutputObject $Settings
+
+                # Desktop Settings
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "DesktopRedirectedPath" }
+                Paragraph -Style Heading3 "Folder Redirection - Desktop"
+                Paragraph "The following Settings Outline the Desktop Folder Redirection Settings"
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+
+                # Documents Settings
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "PersonalRedirectedPath" }
+                Paragraph -Style Heading3 "Folder Redirection - Documents"
+                Paragraph "The following Settings Outline the Documents Folder Redirection Settings"
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+
+                # Pictures Settings
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "PicturesRedirectedPath" -or $_.Key -Like "MyPicturesFollowsDocuments" }
+                Paragraph -Style Heading3 "Folder Redirection - Pictures"
+                Paragraph "The following Settings Outline the Pictures Folder Redirection Settings"
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+
+                # Music
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "MusicRedirectedPath" -or $_.Key -Like "MyMusicFollowsDocuments" } | Sort-Object -Descending
+                Paragraph -Style Heading3 "Folder Redirection - Music"
+                Paragraph "The following Settings Outline the Music Folder Redirection Settings"
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+
+                # Videos
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "VideoRedirectedPath" -or $_.Key -Like "MyVideoFollowsDocuments" }
+                Paragraph -Style Heading3 "Folder Redirection - Videos"
+                Paragraph "The following Settings Outline the Videos Folder Redirection Settings"
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+
+                # Start
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "StartMenuRedirectedPath" }
+                Paragraph -Style Heading3 "Folder Redirection - Start Menu"
+                Paragraph "The following Settings Outline the Start Menu Folder Redirection Settings"
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+
+                # Favorites
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "FavoritesRedirectedPath" }
+                Paragraph -Style Heading3 "Folder Redirection - Favorites"
+                Paragraph "The following Settings Outline the Favorites Folder Redirection Settings"
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+
+                # AppData
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "AppDataRedirectedPath" }
+                Paragraph -Style Heading3 "Folder Redirection - AppData"
+                Paragraph "The following Settings Outline the AppData Folder Redirection Settings"
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+
+                # Contacts
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "ContactsRedirectedPath" }
+                Paragraph -Style Heading3 "Folder Redirection - Contacts"
+                Paragraph "The following Settings Outline the Contacts Folder Redirection Settings"
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+
+                # Downloads
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "DownloadsRedirectedPath" }
+                Paragraph -Style Heading3 "Folder Redirection - Downloads"
+                Paragraph "The following Settings Outline the Downloads Folder Redirection Settings"
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+
+                # Links
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "LinksRedirectedPath" }
+                Paragraph -Style Heading3 "Folder Redirection - Links"
+                Paragraph "The following Settings Outline the Links Folder Redirection Settings"
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+
+                # Searches
+                $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -like "SearchesRedirectedPath" }
+                Paragraph -Style Heading3 "Folder Redirection - Searches"
+                Paragraph "The following Settings Outline the Searches Folder Redirection Settings"
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 25 -Col3 45
+            }
+            $WEMCitrixUPM = Get-WEMUPMSettings -Connection $Connection -IdSite $Site -Verbose
+            Section -Name "Citrix Profile Management" -Style Heading2 {
+                Paragraph "The following Citrix Profile Management Configuration is in place"
+                # Citrix Profile Management Enabled
+                BlankLine
+                Paragraph -Style Heading3 "UPM - Profile Management Configuration"
+                $SettingsList = @("UPMManagementEnabled")
+                $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList }
+                StandardOutput -OutputObject $Settings
+
+                # Citrix Profile Management
+                Paragraph -Style Heading3 "UPM - Citrix profile Management"
+                $SettingsList = @("ServiceActive",
+                    "SetProcessedGroups",
+                    "ProcessedGroupsList",
+                    "SetExcludedGroups",
+                    "ExcludedGroupsList",
+                    "ProcessAdmins",
+                    "SetPathToUserStore",
+                    "PathToUserStore",
+                    "MigrateUserStore",
+                    "MigrateUserStorePath",
+                    "PSMidSessionWriteBack",
+                    "PSMidSessionWriteBackReg",
+                    "OfflineSupport"
+                )
+                $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+
+                # Profile Handling
+                Paragraph -Style Heading3 "UPM - Profile Handling"
+                $SettingsList = @("DeleteCachedProfilesOnLogoff",
+                    "SetProfileDeleteDelay",
+                    "ProfileDeleteDelay",
+                    "SetMigrateWindowsProfilesToUserStore",
+                    "MigrateWindowsProfilesToUserStore",
+                    "AutomaticMigrationEnabled",
+                    "SetLocalProfileConflictHandling",
+                    "LocalProfileConflictHandling",
+                    "SetTemplateProfilePath",
+                    "TemplateProfilePath",
+                    "TemplateProfileOverridesLocalProfile",
+                    "TemplateProfileOverridesRoamingProfile",
+                    "TemplateProfileIsMandatory"
+                )
+                $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+
+                # Advanced Settings
+                Paragraph -Style Heading3 "UPM - Advanced Settings"
+                $SettingsList = @("SetLoadRetries",
+                    "LoadRetries",
+                    "XenAppOptimizationEnabled",
+                    "XenAppOptimizationPath",
+                    "SetUSNDBPath",
+                    "USNDBPath",
+                    "ProcessCookieFiles",
+                    "DeleteRedirectedFolders",
+                    "DisableDynamicConfig",
+                    "LogoffRatherThanTempProfile",
+                    "CEIPEnabled",
+                    "OutlookSearchRoamingEnabled",
+                    "SearchBackupRestoreEnabled"
+                )
+                $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+
+                # Log Settings
+                Paragraph -Style Heading3 "UPM - Log Settings"
+                $SettingsList = @("LoggingEnabled",
+                    "SetLogLevels",
+                    "LogLevels",
+                    "SetMaxLogSize",
+                    "MaxLogSize",
+                    "SetPathToLogFile",
+                    "PathToLogFile"
+                )
+                $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+
+                # Registy
+                Paragraph -Style Heading3 "UPM - Registry"
+                $SettingsList = @("LastKnownGoodRegistry",
+                    "EnableDefaultExclusionListRegistry",
+                    "ExclusionDefaultRegistry01",
+                    "ExclusionDefaultRegistry02",
+                    "ExclusionDefaultRegistry03",
+                    "SetExclusionListRegistry",
+                    "ExclusionListRegistry",
+                    "SetInclusionListRegistry",
+                    "InclusionListRegistry"
+                )
+                $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+
+                # File System
+                Paragraph -Style Heading3 "UPM - File System"
+                $SettingsList = @("EnableLogonExclusionCheck",
+                    "LogonExclusionCheck",
+                    "EnableDefaultExclusionListDirectories",
+                    "ExclusionDefaultDir01",
+                    "ExclusionDefaultDir02",
+                    "ExclusionDefaultDir03",
+                    "ExclusionDefaultDir04",
+                    "ExclusionDefaultDir05",
+                    "ExclusionDefaultDir06",
+                    "ExclusionDefaultDir07",
+                    "ExclusionDefaultDir09",
+                    "ExclusionDefaultDir08",
+                    "ExclusionDefaultDir10",
+                    "ExclusionDefaultDir11",
+                    "ExclusionDefaultDir12",
+                    "ExclusionDefaultDir13",
+                    "ExclusionDefaultDir14",
+                    "ExclusionDefaultDir15",
+                    "ExclusionDefaultDir16",
+                    "ExclusionDefaultDir17",
+                    "ExclusionDefaultDir18",
+                    "ExclusionDefaultDir19",
+                    "ExclusionDefaultDir20",
+                    "ExclusionDefaultDir21",
+                    "ExclusionDefaultDir22",
+                    "ExclusionDefaultDir23",
+                    "ExclusionDefaultDir24",
+                    "ExclusionDefaultDir25",
+                    "ExclusionDefaultDir26",
+                    "ExclusionDefaultDir27",
+                    "ExclusionDefaultDir28",
+                    "ExclusionDefaultDir29",
+                    "ExclusionDefaultDir30",
+                    "SetSyncExclusionListFiles",
+                    "SyncExclusionListFiles",
+                    "SetSyncExclusionListDir",
+                    "SyncExclusionListDir"
+                )
+                $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 30 -Col3 40
+
+                # Synchronization
+                Paragraph -Style Heading3 "UPM - Synchronization"
+                $SettingsList = @("SetSyncDirList",
+                    "SyncDirList",
+                    "SetSyncFileList",
+                    "SyncFileList",
+                    "SetMirrorFoldersList",
+                    "MirrorFoldersList",
+                    "SetProfileContainerList",
+                    "ProfileContainerList",
+                    "SetLargeFileHandlingList",
+                    "LargeFileHandlingList"
+                )
+                $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 30 -Col3 40
+
+                # Streamed User profiles
+                Paragraph -Style Heading3 "UPM - Streamed User profiles"
+                $SettingsList = @("PSEnabled",
+                    "PSAlwaysCache",
+                    "PSAlwaysCacheSize",
+                    "SetPSPendingLockTimeout",
+                    "PSPendingLockTimeout",
+                    "SetPSUserGroupsList",
+                    "PSUserGroupsList",
+                    "EnableStreamingExclusionList",
+                    "StreamingExclusionList"
+                )
+                $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+
+                # Streamed User profiles
+                Paragraph -Style Heading3 "UPM - Cross Platform Settings"
+                $SettingsList = @("CPEnabled",
+                    "SetCPUserGroupList",
+                    "CPUserGroupList",
+                    "SetCPSchemaPath",
+                    "CPSchemaPath",
+                    "SetCPPath",
+                    "CPPath",
+                    "CPMigrationFromBaseProfileToCPStore"
+                )
+                $Settings = $WEMCitrixUPM.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings -Col1 35 -Col2 35 -Col3 30
+            }
         }
-    }
-    PageBreak
-    #endregion
-    #region Active Directory Objects
-    Section -Name "WEM Active Directory Objects" -Style Heading1 {
-        Section -Name "Computer Objects Assigned" -Style Heading2 {
-            $WEMComputers = Get-WEMADAgentObject -Connection $Connection -IdSite $Site -Verbose
-            Paragraph "The following Computer Objects has been Assigned to this Configuration Set"
-            $WEMComputers | Table -Columns Name, Type, Priority, State
-            BlankLine
+        PageBreak
+        #endregion
+        #region Security
+        Section -Name "WEM Security" -Style Heading1 {
+            $WEMSystemOptimization = Get-WEMSystemOptimization -Connection $Connection -IdSite $Site -Verbose
+        
+            Section -Name "Process Management" -Style Heading2 {
+                #Security Settings
+                Paragraph "The following configurations relate to Process Management Settings"
+                $SettingsList = @("EnableProcessesManagement")
+                $Settings = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Process Blacklist
+                Paragraph -Style Heading2 "Process Blacklist"
+                Paragraph "The following configurations relate to Process Blacklist Settings"
+                $SettingsList = @("EnableProcessesBlackListing",
+                    "ProcessesManagementBlackListedProcesses",
+                    "ProcessesManagementBlackListExcludeLocalAdministrators",
+                    "ProcessesManagementBlackListExcludeSpecifiedGroups",
+                    "ProcessesManagementBlackListExcludedSpecifiedGroupsList"
+                )
+                $Settings = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                #Process Whielist
+                Paragraph -Style Heading2 "Process Whitelist"
+                Paragraph "The following configurations relate to Process Whitelist Settings"
+                $SettingsList = @("EnableProcessesWhiteListing",
+                    "ProcessesManagementWhiteListedProcesses",
+                    "ProcessesManagementWhiteListExcludeLocalAdministrators",
+                    "ProcessesManagementWhiteListExcludeSpecifiedGroups",
+                    "ProcessesManagementWhiteListExcludedSpecifiedGroupsList"
+                )
+                $Settings = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "Application Security" -Style Heading2 {   
+                #AppLocker Basics
+                Paragraph "The following configurations relate to AppLocker Settings"
+                $SettingsList = @("AppLockerControllerManagement",
+                    "AppLockerControllerReplaceModeOn"
+                )
+                $Settings = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                #AppLocker Settings
+                $AppLockerProcessSettings = Get-WEMAppLockerSettings -Connection $Connection -IdSite $Site -Verbose
+                Paragraph "AppLocker Processing Settings"
+                $SettingsList = @("CollectionExeEnforcementState",
+                    "EnableDLLRuleCollection",
+                    "CollectionDllEnforcementState",
+                    "CollectionMsiEnforcementState",
+                    "CollectionScriptEnforcementState",
+                    "EnableProcessesAppLocker",
+                    "CollectionAppxEnforcementState"
+                )
+                $Settings = $AppLockerProcessSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
         }
-        Section -Name "User and Group Objects Defined" -Style Heading2 {
-            $WEMUsers = Get-WEMADUserObject -Connection $Connection -IdSite $Site -Verbose
-            Paragraph "The following user and Group Objects have been added to this Configuration Set"
-            $WEMUsers | Table -Columns Name, Type, Description, Priority
+        PageBreak
+        #endregion
+        #region Active Directory Objects
+        Section -Name "WEM Active Directory Objects" -Style Heading1 {
+            Section -Name "Computer Objects Assigned" -Style Heading2 {
+                $WEMComputers = Get-WEMADAgentObject -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMComputers | Measure-Object).Count
+                Paragraph "The following Computer Objects have been Assigned to this Configuration Set"
+                if ($Count -ne 0) {
+                    $WEMComputers | Table -Columns Name, Type, Priority, State
+                }
+                BlankLine
+            }
+            Section -Name "User and Group Objects Defined" -Style Heading2 {
+                $WEMUsers = Get-WEMADUserObject -Connection $Connection -IdSite $Site -Verbose
+                $Count = ($WEMUsers | Measure-Object).Count
+                Paragraph "The following user and Group Objects have been added to this Configuration Set"
+                if ($Count -ne 0) {
+                    $WEMUsers | Table -Columns Name, Type, Description, Priority
+                }
+            }
         }
-    }
-    PageBreak
-    #endregion
-    #region Transformer Settings
-    Section -Name "WEM Transformer Settings" -Style Heading1 {
-        $WEMTransformerSettings = Get-WEMTransformerSettings -Connection $Connection -IdSite $site -Verbose
-        Section -Name "General - General Settings" -Style Heading2 {
-            # General Settings
-            $SettingsList = @("IsKioskEnabled",
-                "GeneralStartUrl"
-            )
-            Paragraph -Style Heading3 "General Settings"
-            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+        PageBreak
+        #endregion
+        #region Transformer Settings
+        Section -Name "WEM Transformer Settings" -Style Heading1 {
+            $WEMTransformerSettings = Get-WEMTransformerSettings -Connection $Connection -IdSite $site -Verbose
+            Section -Name "General - General Settings" -Style Heading2 {
+                # General Settings
+                $SettingsList = @("IsKioskEnabled",
+                    "GeneralStartUrl"
+                )
+                Paragraph -Style Heading3 "General Settings"
+                $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
             
-            # Appearance
-            $SettingsList = @("GeneralTitle",
-                "GeneralWindowMode",
-                "GeneralClockEnabled",
-                "GeneralClockUses12Hours",
-                "GeneralEnableLanguageSelect",
-                "GeneralEnableAppPanel",
-                "GeneralAutoHideAppPanel",
-                "GeneralShowNavigationButtons"
-            )
-            Paragraph -Style Heading3 "Appearance"
-            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+                # Appearance
+                $SettingsList = @("GeneralTitle",
+                    "GeneralWindowMode",
+                    "GeneralClockEnabled",
+                    "GeneralClockUses12Hours",
+                    "GeneralEnableLanguageSelect",
+                    "GeneralEnableAppPanel",
+                    "GeneralAutoHideAppPanel",
+                    "GeneralShowNavigationButtons"
+                )
+                Paragraph -Style Heading3 "Appearance"
+                $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
 
-            # Change Unlock password
-            $SettingsList = @("GeneralUnlockPassword")
-            Paragraph -Style Heading3 "Change Unlock Password"
-            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+                # Change Unlock password
+                $SettingsList = @("GeneralUnlockPassword")
+                Paragraph -Style Heading3 "Change Unlock Password"
+                $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "General - Site Settings" -Style Heading2 {
+                # Site Settings
+                $SettingsList = @("SitesIsListEnabled",
+                    "SitesNamesAndLinks"
+                )
+                Paragraph -Style Heading3 "Site Settings"
+                $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings           
+            }
+            Section -Name "General - Tool Settings" -Style Heading2 {
+                #Tool Settings
+                $SettingsList = @("ToolsEnabled",
+                    "ToolsAppsList"
+                )
+                Paragraph -Style Heading3 "Tool Settings"
+                $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "Advanced - Process Launcher" -Style Heading2 {
+                #Process Launcher
+                $SettingsList = @("ProcessLauncherEnabled",
+                    "ProcessLauncherApplication",
+                    "ProcessLauncherArgs",
+                    "ProcessLauncherClearLastUsernameVMWare",
+                    "ProcessLauncherEnableVMWareViewMode",
+                    "ProcessLauncherEnableMicrosoftRdsMode",
+                    "ProcessLauncherEnableCitrixMode"
+                )
+                Paragraph -Style Heading3 "Process Launcher Settings"
+                $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "Advanced - Advanced & Administration Settings" -Style Heading2 {
+                # Advanced Settings
+                $SettingsList = @("AdvancedFixBrowserRendering",
+                    "AdvancedLogOffScreenRedirection",
+                    "AdvancedSuppressScriptErrors",
+                    "AdvancedFixSslSites",
+                    "AdvancedHideKioskWhileCitrixSession",
+                    "AdvancedAlwaysShowAdminMenu",
+                    "AdvancedHideTaskbar",
+                    "AdvancedLockAltTab",
+                    "AdvancedFixZOrder",
+                    "SetCitrixReceiverFSOMode",
+                    "AdvancedShowWifiSettings",
+                    "AdvancedLockCtrlAltDel"
+                )
+                Paragraph -Style Heading3 "Advanced Settings"
+                $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Administration Settings
+                $SettingsList = @("AdministrationHideDisplaySettings",
+                    "AdministrationHideKeyboardSettings",
+                    "AdministrationHideMouseSettings",
+                    "AdministrationHideVolumeSettings",
+                    "AdministrationHideClientDetails",
+                    "AdministrationDisableProgressBar",
+                    "AdministrationHideWindowsVersion",
+                    "AdministrationHideHomeButton",
+                    "AdministrationHidePrinterSettings",
+                    "AdministrationPreLaunchReceiver",
+                    "AdministrationDisableUnlock",
+                    "AdministrationHideLogOffOption",
+                    "AdministrationHideRestartOption",
+                    "AdministrationHideShutdownOption",
+                    "AdministrationIgnoreLastLanguage"
+                )
+                Paragraph -Style Heading3 "Administration Settings"
+                $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "Advanced - Logon/Logoff & Power Settings" -Style Heading2 {
+                # Autologon Options
+                $SettingsList = @("AutologonEnable",
+                    "AutologonUserName",
+                    "AutologonPassword",
+                    "AutologonDomain",
+                    "AutologonRegistryForce",
+                    "AutologonRegistryIgnoreShiftOverride"
+                )
+                Paragraph -Style Heading3 "Autologon Options"
+                $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Desktop Mode Options
+                $SettingsList = @("DesktopModeLogOffWebPortal")
+                Paragraph -Style Heading3 "Desktop Mode Options"
+                $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # End of Session Options
+                $SettingsList = @("EndSessionOption")
+                Paragraph -Style Heading3 "End of Session Options"
+                $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Power Options
+                $SettingsList = @("PowerShutdownAfterSpecifiedTime",
+                    "PowerShutdownAfterIdleTime",
+                    "PowerDontCheckBattery"
+                )
+                Paragraph -Style Heading3 "Power Options"
+                $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
         }
-        Section -Name "General - Site Settings" -Style Heading2 {
-            # Site Settings
-            $SettingsList = @("SitesIsListEnabled",
-                "SitesNamesAndLinks"
-            )
-            Paragraph -Style Heading3 "Site Settings"
-            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings           
+        PageBreak
+        #endregion
+        #region Advanced Settings
+        Section -Name "WEM Advanced Settings" -Style Heading1 {
+            $WEMAgentSettings = Get-WEMAgentSettings -Connection $Connection -IdSite 1 -Verbose
+            Section -Name "Configuration - Main Configuration" -Style Heading2 {
+                # Agent Actions
+                Paragraph "Agent Actions" -Style Heading3
+                $SettingsList = @("processVUEMApps",
+                    "processVUEMPrinters",
+                    "processVUEMNetDrives",
+                    "processVUEMVirtualDrives",
+                    "processVUEMRegValues",
+                    "processVUEMEnvVariables",
+                    "processVUEMPorts",
+                    "processVUEMIniFilesOps",
+                    "processVUEMExtTasks",
+                    "processVUEMFileSystemOps",
+                    "processVUEMUserDSNs",
+                    "processVUEMFileAssocs"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                #Agent Service Actions
+                Paragraph "Agent Service Actions" -Style Heading3
+                $SettingsList = @("LaunchVUEMAgentOnLogon",
+                    "LaunchVUEMAgentOnReconnect",
+                    "ProcessVUEMAgentLaunchForAdmins",
+                    "VUEMAgentType",
+                    "EnableVirtualDesktopCompatibility",
+                    "ExecuteOnlyCmdAgentInPublishedApplications"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "Cleanup Actions" -Style Heading2 {
+                # Shortcuts deletions
+                Paragraph "Shortcuts Deletion at Startup" -Style Heading3
+                $SettingsList = @("DeleteDesktopShortcuts",
+                    "DeleteStartMenuShortcuts",
+                    "DeleteQuickLaunchShortcuts",
+                    "DeleteTaskBarPinnedShortcuts",
+                    "DeleteStartMenuPinnedShortcuts"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Network Drive Deletions
+                Paragraph "Drive Deletion at Startup" -Style Heading3
+                $SettingsList = @("DeleteNetworkDrives")
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Printer Deletion at Startup
+                Paragraph "Printers Deletion at Startup" -Style Heading3
+                $SettingsList = @("DeleteNetworkPrinters",
+                    "PreserveAutocreatedPrinters",
+                    "PreserveSpecificPrinters",
+                    "SpecificPreservedPrinters"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "Configuration - Agent Options" -Style Heading2 {
+                # Agent Logs
+                Paragraph "Agent Logs" -Style Heading3
+                $SettingsList = @("EnableAgentLogging",
+                    "AgentLogFile",
+                    "AgentDebugMode"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # OFfline Mode Settings
+                Paragraph "Offline Mode Settings" -Style Heading3
+                $SettingsList = @("OfflineModeEnabled",
+                    "UseCacheEvenIfOnline"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Refresh Settings
+                Paragraph "Refresh Settings" -Style Heading3
+                $SettingsList = @("RefreshEnvironmentSettings",
+                    "RefreshSystemSettings",
+                    "RefreshOnEnvironmentalSettingChange",
+                    "RefreshDesktop",
+                    "RefreshAppearance"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Asynchronous Processing
+                Paragraph "Asynchronous Processing" -Style Heading3
+                $SettingsList = @("aSyncVUEMPrintersProcessing",
+                    "aSyncVUEMNetDrivesProcessing"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Extra Features
+                Paragraph "Extra Features" -Style Heading3
+                $SettingsList = @("InitialEnvironmentCleanUp",
+                    "InitialDesktopUICleaning",
+                    "checkAppShortcutExistence",
+                    "appShortcutExpandEnvironmentVariables",
+                    "AgentEnableCrossDomainsUserGroupsSearch",
+                    "AgentBrokerServiceTimeoutValue",
+                    "AgentDirectoryServiceTimeoutValue",
+                    "AgentNetworkResourceCheckTimeoutValue",
+                    "AgentMaxDegreeOfParallelism"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Connection State Change Notification
+                Paragraph "Connection State Change Notification" -style Heading3
+                $SettingsList = @("ConnectionStateChangeNotificationEnabled")
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "Configuration - Advanced Options" -Style Heading2 {
+                # Agent Actions Enforce Execution
+                Paragraph "Agents Actions Enforce Execution" -Style Heading3
+                $SettingsList = @("enforceProcessVUEMApps",
+                    "enforceProcessVUEMPrinters",
+                    "enforceProcessVUEMNetDrives",
+                    "enforceProcessVUEMVirtualDrives",
+                    "enforceProcessVUEMEnvVariables",
+                    "enforceProcessVUEMPorts"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Unassigned Actions Revert Processing
+                Paragraph "Unassigned Actions Revert Processing" -Style Heading3 
+                $SettingsList = @("revertUnassignedVUEMApps",
+                    "revertUnassignedVUEMPrinters",
+                    "revertUnassignedVUEMNetDrives",
+                    "revertUnassignedVUEMVirtualDrives",
+                    "revertUnassignedVUEMRegValues",
+                    "revertUnassignedVUEMEnvVariables",
+                    "revertUnassignedVUEMPorts",
+                    "revertUnassignedVUEMIniFilesOps",
+                    "revertUnassignedVUEMExtTasks",
+                    "revertUnassignedVUEMFileSystemOps",
+                    "revertUnassignedVUEMUserDSNs",
+                    "revertUnassignedVUEMFileAssocs"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings 
+
+                # Automatic Refresh (UI Agent Only)
+                Paragraph "Automatic Refresh (UI Agent Only)" -Style Heading3
+                $SettingsList = @("EnableUIAgentAutomaticRefresh",
+                    "UIAgentAutomaticRefreshDelay"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "Configuration - Reconnection Actions" -Style Heading2 {
+                # Advanced Settings -> Configuration -> Reconnection Actions
+                Paragraph -Name "Actions Processing upon Reconnection" -Style Heading3
+                $SettingsList = @("processVUEMAppsOnReconnect",
+                    "processVUEMPrintersOnReconnect",
+                    "processVUEMNetDrivesOnReconnect",
+                    "processVUEMVirtualDrivesOnReconnect",
+                    "processVUEMRegValuesOnReconnect",
+                    "processVUEMEnvVariablesOnReconnect",
+                    "processVUEMPortsOnReconnect",
+                    "processVUEMIniFilesOpsOnReconnect",
+                    "processVUEMExtTasksOnReconnect",
+                    "processVUEMFileSystemOpsOnReconnect",
+                    "processVUEMUserDSNsOnReconnect",
+                    "processVUEMFileAssocsOnReconnect"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "Configuration - Advanced Processing" -Style Heading2 {
+                # Advanced Settings -> Configuration -> Advanced Processing
+                Paragraph "Filters Processing Enforcement" -Style Heading3
+                $SettingsList = @("enforceVUEMAppsFiltersProcessing",
+                    "enforceVUEMPrintersFiltersProcessing",
+                    "enforceVUEMNetDrivesFiltersProcessing",
+                    "enforceVUEMVirtualDrivesFiltersProcessing",
+                    "enforceVUEMRegValuesFiltersProcessing",
+                    "enforceVUEMEnvVariablesFiltersProcessing",
+                    "enforceVUEMPortsFiltersProcessing",
+                    "enforceVUEMIniFilesOpsFiltersProcessing",
+                    "enforceVUEMExtTasksFiltersProcessing",
+                    "enforceVUEMFileSystemOpsFiltersProcessing",
+                    "enforceVUEMUserDSNsFiltersProcessing",
+                    "enforceVUEMFileAssocsFiltersProcessing"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "Configuration - Service Options" -Style Heading2 {
+                # Agent Service Advanced Options
+                Paragraph "Agent Service Advanced Options" -Style Heading3
+                $SettingsList = @("VUEMAgentCacheRefreshDelay",
+                    "VUEMAgentSQLSettingsRefreshDelay",
+                    "VUEMAgentDesktopsExtraLaunchDelay",
+                    "AgentServiceDebugMode",
+                    "byPassie4uinitCheck"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings 
+
+                # Agent Launch Exclusions
+                Paragraph "Agent Launch Exclusions" -Style Heading3
+                $SettingsList = @("AgentLaunchExcludeGroups",
+                    "AgentLaunchExcludedGroups",
+                    "AgentLaunchIncludeGroups",
+                    "AgentLaunchIncludedGroups"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "Configuration - Console Settings" -Style Heading2 {
+                $WEMAdvancedParams = Get-WEMParameters -Connection $Connection -IdSite $Site -Verbose
+
+                # Forbidden Drives
+                Paragraph "Forbidden Drives" -Style Heading3
+                $SettingsList = @("excludedDriveletters",
+                    "AllowDriveLetterReuse"
+                )
+                $Settings = $WEMAdvancedParams.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key -Descending
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "Configuration - StoreFront" -Style Heading2 {
+                $WEMStoreFrontSettings = Get-WEMStorefrontSetting -Connection $Connection -IdSite $site -Verbose
+                Paragraph "StoreFront Settings" -Style Heading3
+                if ($null -ne $WEMStoreFrontSettings) {
+                    $WEMStoreFrontSettings | Table -Columns StorefrontUrl, Description, State -Headers Setting, Description, Value
+                    BlankLine
+                }
+            }
+            Section -Name "Configuration - Agent Switch" -Style Heading2 {            
+                # Switch to Service Agent
+                Paragraph "Switch to Service Agent" -Style Heading3
+                $SettingsList = @("AgentSwitchFeatureToggle",
+                    "SwitchtoServiceAgent",
+                    "CloudConnectors",
+                    "UseGPO"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "UI Agent Personalization - UI Agent Options" -Style Heading2 {            
+                # Branding
+                Paragraph "Branding" -Style Heading2
+                $SettingsList = @("UIAgentSplashScreenBackGround",
+                    "UIAgentLoadingCircleColor",
+                    "UIAgentLbl1TextColor",
+                    "UIAgentSkinName",
+                    "HideUIAgentSplashScreen",
+                    "HideUIAgentSplashScreenOnReconnect"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Published Applications Behavior
+                Paragraph "Published Applications Behavior" -Style Heading2
+                $SettingsList = @("HideUIAgentIconInPublishedApplications",
+                    "HideUIAgentSplashScreenInPublishedApplications"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # User Interaction
+                Paragraph "User Interaction" -Style Heading2
+                $SettingsList = @("AgentExitForAdminsOnly",
+                    "AgentAllowUsersToManagePrinters",
+                    "AgentAllowUsersToManageApplications",
+                    "AgentPreventExitForAdmins",
+                    "AgentEnableApplicationsShortcuts",
+                    "DisableAdministrativeRefreshFeedback"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "UI Agent Personalization - Helpdesk Options" -Style Heading2 {            
+                # Help & Custom Links
+                Paragraph "Help & Custom Links" -Style Heading2
+                $SettingsList = @("UIAgentHelpLink",
+                    "UIAgentCustomLink"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Screen Capture Options
+                Paragraph "Screen Capture Options" -Style Heading2
+                $SettingsList = @("AgentAllowScreenCapture",
+                    "AgentScreenCaptureEnableSendSupportEmail",
+                    "AgentScreenCaptureSupportEmailAddress",
+                    "MailSMTPToAddress",
+                    "MailCustomSubject",
+                    "AgentScreenCaptureSupportEmailTemplate",
+                    "MailEnableUseSMTP",
+                    "MailSMTPServer",
+                    "MailSMTPPort",
+                    "MailEnableSMTPSSL",
+                    "MailSMTPFromAddress",
+                    "MailEnableUseSMTPCredentials",
+                    "MailSMTPUser",
+                    "MailSMTPPassword"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
+            Section -Name "UI Agent Personalization - Power Saving" -Style Heading2 {
+                Paragraph "Power Options" -Style Heading2
+                # Power Saving
+                $SettingsList = @("AgentShutdownAfterEnabled",
+                    "AgentShutdownAfter",
+                    "AgentShutdownAfterIdleEnabled",
+                    "AgentShutdownAfterIdleTime",
+                    "AgentSuspendInsteadOfShutdown"
+                )
+                $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+            }
         }
-        Section -Name "General - Tool Settings" -Style Heading2 {
-            #Tool Settings
-            $SettingsList = @("ToolsEnabled",
-                "ToolsAppsList"
-            )
-            Paragraph -Style Heading3 "Tool Settings"
-            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+        PageBreak
+        #endregion
+        #region Administration
+        Section -Name "WEM Administration" -Style Heading1 {
+            $GlobalAdmins = Get-WEMAdministrator -Connection $Connection -Verbose | Where-Object { $_.Permissions -like "Global Admin *" }
+            $SiteAdmins = Get-WEMAdministrator -Connection $Connection -IdSite $Site -Verbose
+
+            Paragraph "The following Global Administrators have been defined within the WEM Environment"
+            $GlobalAdmins | Table -Columns Name, Type, Permissions, Description, State
+            BlankLine
+
+            $Count = ($SiteAdmins | Measure-Object).Count
+            if ($Count -ne 0) {
+                Paragraph "The following Site Specific Administrators have been defined with the WEM Site"
+                $SiteAdmins | Table -Columns Name, Type, Permissions, Description, State
+            }
+            BlankLine
         }
-        Section -Name "Advanced - Process Launcher" -Style Heading2 {
-            #Process Launcher
-            $SettingsList = @("ProcessLauncherEnabled",
-                "ProcessLauncherApplication",
-                "ProcessLauncherArgs",
-                "ProcessLauncherClearLastUsernameVMWare",
-                "ProcessLauncherEnableVMWareViewMode",
-                "ProcessLauncherEnableMicrosoftRdsMode",
-                "ProcessLauncherEnableCitrixMode"
-            )
-            Paragraph -Style Heading3 "Process Launcher Settings"
-            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+        PageBreak
+        #endregion
+        #region Monitoring
+        Section -Name "WEM Monitoring" -Style Heading1 {
+            $WEMMonitoringSettings = Get-WEMSystemMonitoringSettings -Connection $Connection -IdSite $Site -Verbose
+            Section -Name "Configuration" -Style Heading2 {
+                Paragraph "Advanced Settings" -Style Heading2
+                $SettingsList = @("BusinessDayEndHour",
+                    "ReportsBootTimeMinimum",
+                    "BusinessDayStartHour",
+                    "EnableWorkDaysFiltering",
+                    "WorkDaysFilter",
+                    "ReportsLoginTimeMinimum"
+                )
+                $Settings = $WEMMonitoringSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings
+
+                # Advanced Monitoring - Database Only
+                Paragraph "Advanced Settings - Database Only" -Style Heading2
+
+                $SettingsList = @("EnableApplicationReportsWindows2K3XPCompliance",
+                    "EnableGlobalSystemMonitoring",
+                    "EnableProcessActivityMonitoring",
+                    "EnableUserExperienceMonitoring",
+                    "EnableSystemMonitoring",
+                    "ExcludedProcessesFromApplicationReports",
+                    "ExcludeProcessesFromApplicationReports",
+                    "LocalDatabaseRetentionPeriod",
+                    "LocalDataUploadFrequency",
+                    "EnableStrictPrivacy"
+                )
+                $Settings = $WEMMonitoringSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+                StandardOutput -OutputObject $Settings -col1 30 -Col2 30 -Col3 40
+            }
         }
-        Section -Name "Advanced - Advanced & Administration Settings" -Style Heading2 {
-            # Advanced Settings
-            $SettingsList = @("AdvancedFixBrowserRendering",
-                "AdvancedLogOffScreenRedirection",
-                "AdvancedSuppressScriptErrors",
-                "AdvancedFixSslSites",
-                "AdvancedHideKioskWhileCitrixSession",
-                "AdvancedAlwaysShowAdminMenu",
-                "AdvancedHideTaskbar",
-                "AdvancedLockAltTab",
-                "AdvancedFixZOrder",
-                "SetCitrixReceiverFSOMode",
-                "AdvancedShowWifiSettings",
-                "AdvancedLockCtrlAltDel"
-            )
-            Paragraph -Style Heading3 "Advanced Settings"
-            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            # Administration Settings
-            $SettingsList = @("AdministrationHideDisplaySettings",
-                "AdministrationHideKeyboardSettings",
-                "AdministrationHideMouseSettings",
-                "AdministrationHideVolumeSettings",
-                "AdministrationHideClientDetails",
-                "AdministrationDisableProgressBar",
-                "AdministrationHideWindowsVersion",
-                "AdministrationHideHomeButton",
-                "AdministrationHidePrinterSettings",
-                "AdministrationPreLaunchReceiver",
-                "AdministrationDisableUnlock",
-                "AdministrationHideLogOffOption",
-                "AdministrationHideRestartOption",
-                "AdministrationHideShutdownOption",
-                "AdministrationIgnoreLastLanguage"
-            )
-            Paragraph -Style Heading3 "Administration Settings"
-            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-        }
-        Section -Name "Advanced - Logon/Logoff & Power Settings" -Style Heading2 {
-            # Autologon Options
-            $SettingsList = @("AutologonEnable",
-                "AutologonUserName",
-                "AutologonPassword",
-                "AutologonDomain",
-                "AutologonRegistryForce",
-                "AutologonRegistryIgnoreShiftOverride"
-            )
-            Paragraph -Style Heading3 "Autologon Options"
-            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            # Desktop Mode Options
-            $SettingsList = @("DesktopModeLogOffWebPortal")
-            Paragraph -Style Heading3 "Desktop Mode Options"
-            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            # End of Session Options
-            $SettingsList = @("EndSessionOption")
-            Paragraph -Style Heading3 "End of Session Options"
-            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            # Power Options
-            $SettingsList = @("PowerShutdownAfterSpecifiedTime",
-                "PowerShutdownAfterIdleTime",
-                "PowerDontCheckBattery"
-            )
-            Paragraph -Style Heading3 "Power Options"
-            $Settings = $WEMTransformerSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-        }
-    }
-    PageBreak
-    #endregion
-    #region Advanced Settings
-    Section -Name "WEM Advanced Settings" -Style Heading1 {
-        $WEMAgentSettings = Get-WEMAgentSettings -Connection $Connection -IdSite 1 -Verbose
-        Section -Name "Configuration - Main Configuration" -Style Heading2 {
-            # Agent Actions
-            Paragraph "Agent Actions" -Style Heading3
-            $SettingsList = @("processVUEMApps",
-                "processVUEMPrinters",
-                "processVUEMNetDrives",
-                "processVUEMVirtualDrives",
-                "processVUEMRegValues",
-                "processVUEMEnvVariables",
-                "processVUEMPorts",
-                "processVUEMIniFilesOps",
-                "processVUEMExtTasks",
-                "processVUEMFileSystemOps",
-                "processVUEMUserDSNs",
-                "processVUEMFileAssocs"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            #Agent Service Actions
-            Paragraph "Agent Service Actions" -Style Heading3
-            $SettingsList = @("LaunchVUEMAgentOnLogon",
-                "LaunchVUEMAgentOnReconnect",
-                "ProcessVUEMAgentLaunchForAdmins",
-                "VUEMAgentType",
-                "EnableVirtualDesktopCompatibility",
-                "ExecuteOnlyCmdAgentInPublishedApplications"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-        }
-        Section -Name "Cleanup Actions" -Style Heading2 {
-            # Shortcuts deletions
-            Paragraph "Shortcuts Deletion at Startup" -Style Heading3
-            $SettingsList = @("DeleteDesktopShortcuts",
-                "DeleteStartMenuShortcuts",
-                "DeleteQuickLaunchShortcuts",
-                "DeleteTaskBarPinnedShortcuts",
-                "DeleteStartMenuPinnedShortcuts"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            # Network Drive Deletions
-            Paragraph "Drive Deletion at Startup" -Style Heading3
-            $SettingsList = @("DeleteNetworkDrives")
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            # Printer Deletion at Startup
-            Paragraph "Printers Deletion at Startup" -Style Heading3
-            $SettingsList = @("DeleteNetworkPrinters",
-                "PreserveAutocreatedPrinters",
-                "PreserveSpecificPrinters",
-                "SpecificPreservedPrinters"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-        }
-        Section -Name "Configuration - Agent Options" -Style Heading2 {
-            # Agent Logs
-            Paragraph "Agent Logs" -Style Heading3
-            $SettingsList = @("EnableAgentLogging",
-                "AgentLogFile",
-                "AgentDebugMode"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            # OFfline Mode Settings
-            Paragraph "Offline Mode Settings" -Style Heading3
-            $SettingsList = @("OfflineModeEnabled",
-                "UseCacheEvenIfOnline"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            # Refresh Settings
-            Paragraph "Refresh Settings" -Style Heading3
-            $SettingsList = @("RefreshEnvironmentSettings",
-                "RefreshSystemSettings",
-                "RefreshOnEnvironmentalSettingChange",
-                "RefreshDesktop",
-                "RefreshAppearance"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            # Asynchronous Processing
-            Paragraph "Asynchronous Processing" -Style Heading3
-            $SettingsList = @("aSyncVUEMPrintersProcessing",
-                "aSyncVUEMNetDrivesProcessing"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            # Extra Features
-            Paragraph "Extra Features" -Style Heading3
-            $SettingsList = @("InitialEnvironmentCleanUp",
-                "InitialDesktopUICleaning",
-                "checkAppShortcutExistence",
-                "appShortcutExpandEnvironmentVariables",
-                "AgentEnableCrossDomainsUserGroupsSearch",
-                "AgentBrokerServiceTimeoutValue",
-                "AgentDirectoryServiceTimeoutValue",
-                "AgentNetworkResourceCheckTimeoutValue",
-                "AgentMaxDegreeOfParallelism"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            # Connection State Change Notification
-            Paragraph "Connection State Change Notification" -style Heading3
-            $SettingsList = @("ConnectionStateChangeNotificationEnabled")
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-        }
-        Section -Name "Configuration - Advanced Options" -Style Heading2 {
-            # Agent Actions Enforce Execution
-            Paragraph "Agents Actions Enforce Execution" -Style Heading3
-            $SettingsList = @("enforceProcessVUEMApps",
-                "enforceProcessVUEMPrinters",
-                "enforceProcessVUEMNetDrives",
-                "enforceProcessVUEMVirtualDrives",
-                "enforceProcessVUEMEnvVariables",
-                "enforceProcessVUEMPorts"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-
-            # Unassigned Actions Revert Processing
-            Paragraph "Unassigned Actions Revert Processing" -Style Heading3 
-            $SettingsList = @("revertUnassignedVUEMApps",
-                "revertUnassignedVUEMPrinters",
-                "revertUnassignedVUEMNetDrives",
-                "revertUnassignedVUEMVirtualDrives",
-                "revertUnassignedVUEMRegValues",
-                "revertUnassignedVUEMEnvVariables",
-                "revertUnassignedVUEMPorts",
-                "revertUnassignedVUEMIniFilesOps",
-                "revertUnassignedVUEMExtTasks",
-                "revertUnassignedVUEMFileSystemOps",
-                "revertUnassignedVUEMUserDSNs",
-                "revertUnassignedVUEMFileAssocs"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings 
-
-            # Automatic Refresh (UI Agent Only)
-            Paragraph "Automatic Refresh (UI Agent Only)" -Style Heading3
-            $SettingsList = @("EnableUIAgentAutomaticRefresh",
-                "UIAgentAutomaticRefreshDelay"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-        }
-        Section -Name "Configuration - Reconnection Actions" -Style Heading2 {
-            # Advanced Settings -> Configuration -> Reconnection Actions
-            Paragraph -Name "Actions Processing upon Reconnection" -Style Heading3
-            $SettingsList = @("processVUEMAppsOnReconnect",
-                "processVUEMPrintersOnReconnect",
-                "processVUEMNetDrivesOnReconnect",
-                "processVUEMVirtualDrivesOnReconnect",
-                "processVUEMRegValuesOnReconnect",
-                "processVUEMEnvVariablesOnReconnect",
-                "processVUEMPortsOnReconnect",
-                "processVUEMIniFilesOpsOnReconnect",
-                "processVUEMExtTasksOnReconnect",
-                "processVUEMFileSystemOpsOnReconnect",
-                "processVUEMUserDSNsOnReconnect",
-                "processVUEMFileAssocsOnReconnect"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-        }
-        Section -Name "Configuration - Advanced Processing" -Style Heading2 {
-            # Advanced Settings -> Configuration -> Advanced Processing
-            Paragraph "Filters Processing Enforcement" -Style Heading3
-            $SettingsList = @("enforceVUEMAppsFiltersProcessing",
-                "enforceVUEMPrintersFiltersProcessing",
-                "enforceVUEMNetDrivesFiltersProcessing",
-                "enforceVUEMVirtualDrivesFiltersProcessing",
-                "enforceVUEMRegValuesFiltersProcessing",
-                "enforceVUEMEnvVariablesFiltersProcessing",
-                "enforceVUEMPortsFiltersProcessing",
-                "enforceVUEMIniFilesOpsFiltersProcessing",
-                "enforceVUEMExtTasksFiltersProcessing",
-                "enforceVUEMFileSystemOpsFiltersProcessing",
-                "enforceVUEMUserDSNsFiltersProcessing",
-                "enforceVUEMFileAssocsFiltersProcessing"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-        }
-        Section -Name "Configuration - Service Options" -Style Heading2 {
-            # Agent Service Advanced Options
-            Paragraph "Agent Service Advanced Options" -Style Heading3
-            $SettingsList = @("VUEMAgentCacheRefreshDelay",
-                "VUEMAgentSQLSettingsRefreshDelay",
-                "VUEMAgentDesktopsExtraLaunchDelay",
-                "AgentServiceDebugMode",
-                "byPassie4uinitCheck"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings 
-
-            # Agent Launch Exclusions
-            Paragraph "Agent Launch Exclusions" -Style Heading3
-            $SettingsList = @("AgentLaunchExcludeGroups",
-                "AgentLaunchExcludedGroups",
-                "AgentLaunchIncludeGroups",
-                "AgentLaunchIncludedGroups"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-        }
-        Section -Name "Configuration - Console Settings" -Style Heading2 {
+        PageBreak
+        #endregion
+        #region WEM Advanced Options
+        Section -Name "WEM Advanced Options" -Style Heading1 {
             $WEMAdvancedParams = Get-WEMParameters -Connection $Connection -IdSite $Site -Verbose
+            Paragraph "The following Advanced Options exist within the environment, though are not always visbile in the WEM Console"
+            $SettingsList = @("ADSearchForestBlacklist",
+                "AgentSiteIdCacheOverdueTime",
+                "ActionGroupsToggle",
+                "VersionInfo",
+                "GlobalLicenseServerPort",
+                "GlobalLicenseServer",
+                "DisplayUPMStatusToggle",
+                "ProfileContainerToggle",
+                "AgentDomainCacheOverdueTime"
+            )
+            $Settings = $WEMAdvancedParams.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
+            StandardOutput -OutputObject $Settings
+        }
+        PageBreak
+        #endregion
+        #region Appendix
+        if ($Detailed.IsPresent) {
+            Write-Verbose "Detailed output requested" -Verbose
+            Section -Name "Detailed Appendix - Actions" -Style Heading1 {
+                Section -Name "Actions - Applications" -Style Heading2 {
+                    $WEMApplications = Get-WEMApplication -Connection $Connection -IdSite $Site -Verbose
+                    Paragraph "Detailed Configurations for all WEM Application actions are outlined below"
+                    BlankLine
+                    foreach ($App in $WEMApplications) {
+                        Paragraph -Style Heading3 "$($app.Name)"
+                        $App | Table -List -Columns Name, DisplayName, Description, State, Type, StartMenuTarget, TargetPath, Parameters, WorkingDirectory, WindowStyle, HotKey, IconLocation, SelfHealingEnabled, EnforceIconLocation, EnforceIconXValue, EnforceIconYValue, DoNotShowInSelfService, CreateShortcutInUserFavoritesFolder
+                        BlankLine
+                    }
+                }
+                Section -Name "Actions - Registry Values" -Style Heading2 {
+                    $WEMRegistryValues = Get-WEMRegistryEntry -Connection $Connection -IdSite $Site -Verbose
+                    Paragraph "Detailed Configurations for all WEM Registry Value actions are outlined below"
+                    BlankLine
+                    foreach ($RegValue in $WEMRegistryValues) {
+                        Paragraph -Style Heading3 "$($RegValue.Name)"
+                        $RegValue | Table -List -Columns Name, Description, State, ActionType, TargetPath, TargetName, TargetType, TargetValue, RunOnce
+                        BlankLine
+                    }
+                }
+                Section -Name "Actions - Ini File Ops" -Style Heading2 {
+                    $WEMIniFiles = Get-WEMIniFileOperation -Connection $Connection -IdSite $Site -Verbose
+                    Paragraph "Detailed Configurations for all Ini File Ops actions are outlined below"
+                    BlankLine
+                    foreach ($IniValue in $WEMIniFiles) {
+                        Paragraph -Style Heading3 "$($IniValue.Name)"
+                        $IniValue | Table -List -Columns Name, Description, State, ActionType, TargetPath, TargetName, TargetValue, RunOnce
+                    }
+                }
+                Section -Name "Actions - External Tasks" -Style Heading2 {
+                    $WEMExternalTasks = Get-WEMExternalTask -Connection $Connection -IdSite $Site -Verbose
+                    Paragraph "Detailed Configurations for all WEM External Task actions are outlined below"
+                    BlankLine
+                    foreach ($Task in $WEMExternalTasks) {
+                        Paragraph -Style Heading3 "$($Task.Name)"
+                        $Task | Table -List -Columns Name, Description, State, ActionType, TargetPath, TargetArguments, RunHidden, WaitForFinish, TimeOut, ExecutionOrder, RunOnce, ExecuteOnlyAtLogon
+                        BlankLine
+                    }
+                }
+                Section -Name "Actions - File System Operations" -Style Heading2 {
+                    $WEMFileSystemObjects = Get-WEMFileSystemOp -Connection $Connection -IdSite $Site -Verbose
+                    Paragraph "Detailed Configurations for all WEM File System Operation actions are outlined below"
+                    BlankLine
+                    foreach ($FSO in $WEMFileSystemObjects) {
+                        Paragraph -Style Heading3 "$($FSO.Name)"
+                        $FSO | Table -List -Columns Name, Description, State, ActionType, SourcePath, TargetPath, TargetOverwrite, RunOnce, ExecutionOrder
+                        BlankLine
+                    }
+                }
+                Section -Name "Actions - User DSNs" -Style Heading2 {
+                    $WEMUserDSNs = Get-WEMUserDSN -Connection $Connection -IdSite $Site -Verbose
+                    Paragraph "Detailed Configurations for all WEM User DSN actions are outlined below"
+                    BlankLine
+                    foreach ($DSN in $WEMUserDSNs) {
+                        Paragraph -Style Heading3 "$($DSN.Name)"
+                        $DSN | Table -List -Columns Name, Description, State, ActionType, TargetName, TargetDriverName, TargetServerName, TargetDatabaseName, UseExternalCredentials, ExternalUsername, ExternalPassword, RunOnce
+                        BlankLine
+                    }
+                }
+                Section -Name "Actions - File Associations" -Style Heading2 {
+                    $WEMFileAssocs = Get-WEMFileAssoc -Connection $Connection -IdSite $Site -Verbose
+                    Paragraph "Detailed Configurations for all WEM File Association actions are outlined below"
+                    BlankLine
+                    foreach ($FileAssoc in $WEMFileAssocs) {
+                        Paragraph -Style Heading3 "$($FileAssoc.Name)"
+                        $FileAssoc | Table -List -Columns Name, Description, State, ActionType, FileExtension, ProgramId, Action, IsDefault, TargetPath, TargetCommand, TargetOverwrite, RunOnce
+                        BlankLine
+                    }
+                }
+            }
+            Section -Name "Detailed Appendix - Filters" -Style Heading1 {
+                Section -Name "Conditions" -Style Heading2 {
+                    $WEMConditions = Get-WEMCondition -Connection $Connection -IdSite $Site -Verbose
+                    Paragraph "Detailed Configurations for all WEM Conditions are outlined below"
+                    BlankLine
+                    foreach ($Condition in $WEMConditions) {
+                        Paragraph -Style Heading3 "$($Condition.Name)"
+                        $Condition | Table -List -Columns Name, Description, State, Type, TestValue, TestResult
+                        BlankLine
+                    }
+                }
+                Section -Name "Rules" -Style Heading2 {
+                    $WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose | Select-Object Name, Description, State, @{Name = 'Conditions'; Expression = { $_.Conditions -join '; ' } }
+                    Paragraph "Detailed Configurations for all WEM Rules are outlined below"
+                    BlankLine
+                    foreach ($Rule in $WEMRules) {
+                        Paragraph -Style Heading3 "$($Rule.Name)"
+                        $Rule | Table -List -Columns Name, Description, State, Conditions
+                        BlankLine
+                    }
+                }
+            }
+        }
+        #endregion
+    } | Export-Document -Path $OutputLocation -Format Word, HTML -Verbose
+}
 
-            # Forbidden Drives
-            Paragraph "Forbidden Drives" -Style Heading3
-            $SettingsList = @("excludedDriveletters",
-                "AllowDriveLetterReuse"
-            )
-            $Settings = $WEMAdvancedParams.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key -Descending
-            StandardOutput -OutputObject $Settings
-        }
-        Section -Name "Configuration - StoreFront" -Style Heading2 {
-            $WEMStoreFrontSettings = Get-WEMStorefrontSetting -Connection $Connection -IdSite $site -Verbose
-            Paragraph "StoreFront Settings" -Style Heading3
-            $WEMStoreFrontSettings | Table -Columns StorefrontUrl, Description, State -Headers Setting, Description, Value
-            BlankLine
-        }
-        Section -Name "Configuration - Agent Switch" -Style Heading2 {            
-            # Switch to Service Agent
-            Paragraph "Switch to Service Agent" -Style Heading3
-            $SettingsList = @("AgentSwitchFeatureToggle",
-                "SwitchtoServiceAgent",
-                "CloudConnectors",
-                "UseGPO"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-        }
-        Section -Name "UI Agent Personalization - UI Agent Options" -Style Heading2 {            
-            # Branding
-            Paragraph "Branding" -Style Heading2
-            $SettingsList = @("UIAgentSplashScreenBackGround",
-                "UIAgentLoadingCircleColor",
-                "UIAgentLbl1TextColor",
-                "UIAgentSkinName",
-                "HideUIAgentSplashScreen",
-                "HideUIAgentSplashScreenOnReconnect"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+Import-Module C:\users\JKindon\Documents\GitHub\Citrix.WEMSDK\Citrix.WEMSDK.psd1 -Force
 
-            # Published Applications Behavior
-            Paragraph "Published Applications Behavior" -Style Heading2
-            $SettingsList = @("HideUIAgentIconInPublishedApplications",
-                "HideUIAgentSplashScreenInPublishedApplications"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+CheckModuleExists -Module "PScribo"
+#CheckModuleExists -Module "Citrix.WEMSDK"
 
-            # User Interaction
-            Paragraph "User Interaction" -Style Heading2
-            $SettingsList = @("AgentExitForAdminsOnly",
-                "AgentAllowUsersToManagePrinters",
-                "AgentAllowUsersToManageApplications",
-                "AgentPreventExitForAdmins",
-                "AgentEnableApplicationsShortcuts",
-                "DisableAdministrativeRefreshFeedback"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
-        }
-        Section -Name "UI Agent Personalization - Helpdesk Options" -Style Heading2 {            
-            # Help & Custom Links
-            Paragraph "Help & Custom Links" -Style Heading2
-            $SettingsList = @("UIAgentHelpLink",
-                "UIAgentCustomLink"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+if ($DBServer) {
+    Write-Verbose "Selected DBName Server: $DBServer" -Verbose
+}
 
-            # Screen Capture Options
-            Paragraph "Screen Capture Options" -Style Heading2
-            $SettingsList = @("AgentAllowScreenCapture",
-                "AgentScreenCaptureEnableSendSupportEmail",
-                "AgentScreenCaptureSupportEmailAddress",
-                "MailSMTPToAddress",
-                "MailCustomSubject",
-                "AgentScreenCaptureSupportEmailTemplate",
-                "MailEnableUseSMTP",
-                "MailSMTPServer",
-                "MailSMTPPort",
-                "MailEnableSMTPSSL",
-                "MailSMTPFromAddress",
-                "MailEnableUseSMTPCredentials",
-                "MailSMTPUser",
-                "MailSMTPPassword"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+if ($DBName) {
+    Write-Verbose "Selected DBName Name: $DBName" -Verbose
+}
+
+if ($ListAllConfigSets.IsPresent) {
+    Write-Verbose "Listing all Configuration Sets" -Verbose
+    # Create a Connection Object to list sites
+    $Connection = New-WEMDatabaseConnection -Server $DBServer -Database $DBName #-Verbose
+    Get-WEMConfiguration -Connection $Connection | Format-Table
+    break
+}
+
+if ($OutputLocation) {
+    Write-Verbose "Selected to output report to $OutputLocation" -Verbose
+    if (Test-Path $OutputLocation) {
+        Write-Verbose "Confirming $OutputLocation Exists, Using as Output Location" -Verbose
+    }
+    else {
+        try {
+            Write-Warning "$OutputLocation does not exist, Attempting to create" -Verbose
+            New-Item -Path $OutputLocation -ItemType Directory -WhatIf # <- Fix This!
         }
-        Section -Name "UI Agent Personalization - Power Saving" -Style Heading2 {
-            Paragraph "Power Options" -Style Heading2
-            # Power Saving
-            $SettingsList = @("AgentShutdownAfterEnabled",
-                "AgentShutdownAfter",
-                "AgentShutdownAfterIdleEnabled",
-                "AgentShutdownAfterIdleTime",
-                "AgentSuspendInsteadOfShutdown"
-            )
-            $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+        catch {
+            Write-Warning "Failed to Create $OutputLocation Directory" -Verbose
+            #Break <- Fix This!
         }
     }
-    PageBreak
-    #endregion
-    #region Administration
-    Section -Name "WEM Administration" -Style Heading1 {
-        $GlobalAdmins = Get-WEMAdministrator -Connection $Connection -Verbose | Where-Object {$_.Permissions -like "Global Admin *"}
-        $SiteAdmins = Get-WEMAdministrator -Connection $Connection -IdSite $Site -Verbose
+}
 
-        Paragraph "The following Global Administrators have been defined within the WEM Environment"
-        $GlobalAdmins | Table -Columns Name,Type,Permissions,Description,State
-        BlankLine
+if ($CompanyName) {
+    Write-Verbose "Company Name is: $CompanyName" -Verbose
+}
 
-        Paragraph "The following Site Specific Administrators have been defined with the WEM Site"
-        $SiteAdmins | Table -Columns Name,Type,Permissions,Description,State
-        BlankLine
-     }
-    PageBreak
-    #endregion
-    #region Monitoring
-    Section -Name "WEM Monitoring" -Style Heading1 {
-        $WEMMonitoringSettings = Get-WEMSystemMonitoringSettings -Connection $Connection -IdSite $Site -Verbose
-        Section -Name "Configuration" -Style Heading2 {
-            Paragraph "Advanced Settings" -Style Heading2
-            $SettingsList = @("BusinessDayEndHour",
-                "ReportsBootTimeMinimum",
-                "BusinessDayStartHour",
-                "EnableWorkDaysFiltering",
-                "WorkDaysFilter",
-                "ReportsLoginTimeMinimum"
-            )
-            $Settings = $WEMMonitoringSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings
+if ($Site) {
+    Write-Verbose "Selected Site ID: $Site" -Verbose
+    $WEMSite = Get-WEMConfiguration -Connection $Connection -IdSite $Site -Verbose
+}
 
-            # Advanced Monitoring - Database Only
-            Paragraph "Advanced Settings - Database Only" -Style Heading2
+WriteDoc
 
-            $SettingsList = @("EnableApplicationReportsWindows2K3XPCompliance",
-                "EnableGlobalSystemMonitoring",
-                "EnableProcessActivityMonitoring",
-                "EnableUserExperienceMonitoring",
-                "EnableSystemMonitoring",
-                "ExcludedProcessesFromApplicationReports",
-                "ExcludeProcessesFromApplicationReports",
-                "LocalDatabaseRetentionPeriod",
-                "LocalDataUploadFrequency",
-                "EnableStrictPrivacy"
-            )
-            $Settings = $WEMMonitoringSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-            StandardOutput -OutputObject $Settings -col1 30 -Col2 30 -Col3 40
-        }
-    }
-    PageBreak
-    #endregion
-    #region WEM Advanced Options
-    Section -Name "WEM Advanced Options" -Style Heading1 {
-        $WEMAdvancedParams = Get-WEMParameters -Connection $Connection -IdSite $Site -Verbose
-        Paragraph "The following Advanced Options exist within the environment, though are not always visbile in the WEM Console"
-        $SettingsList = @("ADSearchForestBlacklist",
-            "AgentSiteIdCacheOverdueTime",
-            "ActionGroupsToggle",
-            "VersionInfo",
-            "GlobalLicenseServerPort",
-            "GlobalLicenseServer",
-            "DisplayUPMStatusToggle",
-            "ProfileContainerToggle",
-            "AgentDomainCacheOverdueTime"
-        )
-        $Settings = $WEMAdvancedParams.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
-        StandardOutput -OutputObject $Settings
-    }
-    PageBreak
-    #endregion
-    #region Appendix
-    Section -Name "Detailed Appendix - Actions" -Style Heading1 {
-        Section -Name "Actions - Applications" -Style Heading2 {
-            $WEMApplications = Get-WEMApplication -Connection $Connection -IdSite $Site -Verbose
-            Paragraph "Detailed Configurations for all WEM Application actions are outlined below"
-            BlankLine
-            foreach ($App in $WEMApplications) {
-                Paragraph -Style Heading3 "$($app.Name)"
-                $App | Table -List -Columns Name, DisplayName, Description, State, Type, StartMenuTarget, TargetPath, Parameters, WorkingDirectory, WindowStyle, HotKey, IconLocation, SelfHealingEnabled, EnforceIconLocation, EnforceIconXValue, EnforceIconYValue, DoNotShowInSelfService, CreateShortcutInUserFavoritesFolder
-                BlankLine
-            }
-        }
-        Section -Name "Actions - Registry Values" -Style Heading2 {
-            $WEMRegistryValues = Get-WEMRegistryEntry -Connection $Connection -IdSite $Site -Verbose
-            Paragraph "Detailed Configurations for all WEM Registry Value actions are outlined below"
-            BlankLine
-            foreach ($RegValue in $WEMRegistryValues) {
-                Paragraph -Style Heading3 "$($RegValue.Name)"
-                $RegValue | Table -List -Columns Name, Description, State, ActionType, TargetPath, TargetName, TargetType, TargetValue, RunOnce
-                BlankLine
-            }
-        }
-        Section -Name "Actions - Ini File Ops" -Style Heading2 {
-            $WEMIniFiles = Get-WEMIniFileOperation -Connection $Connection -IdSite $Site -Verbose
-            Paragraph "Detailed Configurations for all Ini File Ops actions are outlined below"
-            BlankLine
-            foreach ($IniValue in $WEMIniFiles) {
-                Paragraph -Style Heading3 "$($IniValue.Name)"
-                $IniValue | Table -List -Columns Name, Description, State, ActionType, TargetPath, TargetName, TargetValue, RunOnce
-            }
-        }
-        Section -Name "Actions - External Tasks" -Style Heading2 {
-            $WEMExternalTasks = Get-WEMExternalTask -Connection $Connection -IdSite $Site -Verbose
-            Paragraph "Detailed Configurations for all WEM External Task actions are outlined below"
-            BlankLine
-            foreach ($Task in $WEMExternalTasks) {
-                Paragraph -Style Heading3 "$($Task.Name)"
-                $Task | Table -List -Columns Name, Description, State, ActionType, TargetPath, TargetArguments, RunHidden, WaitForFinish, TimeOut, ExecutionOrder, RunOnce, ExecuteOnlyAtLogon
-                BlankLine
-            }
-        }
-        Section -Name "Actions - File System Operations" -Style Heading2 {
-            $WEMFileSystemObjects = Get-WEMFileSystemOp -Connection $Connection -IdSite $Site -Verbose
-            Paragraph "Detailed Configurations for all WEM File System Operation actions are outlined below"
-            BlankLine
-            foreach ($FSO in $WEMFileSystemObjects) {
-                Paragraph -Style Heading3 "$($FSO.Name)"
-                $FSO | Table -List -Columns Name, Description, State, ActionType, SourcePath, TargetPath, TargetOverwrite, RunOnce, ExecutionOrder
-                BlankLine
-            }
-        }
-        Section -Name "Actions - User DSNs" -Style Heading2 {
-            $WEMUserDSNs = Get-WEMUserDSN -Connection $Connection -IdSite $Site -Verbose
-            Paragraph "Detailed Configurations for all WEM User DSN actions are outlined below"
-            BlankLine
-            foreach ($DSN in $WEMUserDSNs) {
-                Paragraph -Style Heading3 "$($DSN.Name)"
-                $DSN | Table -List -Columns Name, Description, State, ActionType, TargetName, TargetDriverName, TargetServerName, TargetDatabaseName, UseExternalCredentials, ExternalUsername, ExternalPassword, RunOnce
-                BlankLine
-            }
-        }
-        Section -Name "Actions - File Associations" -Style Heading2 {
-            $WEMFileAssocs = Get-WEMFileAssoc -Connection $Connection -IdSite $Site -Verbose
-            Paragraph "Detailed Configurations for all WEM File Association actions are outlined below"
-            BlankLine
-            foreach ($FileAssoc in $WEMFileAssocs) {
-                Paragraph -Style Heading3 "$($FileAssoc.Name)"
-                $FileAssoc | Table -List -Columns Name, Description, State, ActionType, FileExtension, ProgramId, Action, IsDefault, TargetPath, TargetCommand, TargetOverwrite, RunOnce
-                BlankLine
-            }
-        }
-    }
-    Section -Name "Detailed Appendix - Filters" -Style Heading1 {
-        Section -Name "Conditions" -Style Heading2 {
-            $WEMConditions = Get-WEMCondition -Connection $Connection -IdSite $Site -Verbose
-            Paragraph "Detailed Configurations for all WEM Conditions are outlined below"
-            BlankLine
-            foreach ($Condition in $WEMConditions) {
-                Paragraph -Style Heading3 "$($Condition.Name)"
-                $Condition | Table -List -Columns Name, Description, State, Type, TestValue, TestResult
-                BlankLine
-            }
-        }
-        Section -Name "Rules" -Style Heading2 {
-            $WEMRules = Get-WEMRule -Connection $Connection -IdSite $Site -Verbose | Select-Object Name,Description,State,@{Name='Conditions';Expression={$_.Conditions -join '; '}}
-            Paragraph "Detailed Configurations for all WEM Rules are outlined below"
-            BlankLine
-            foreach ($Rule in $WEMRules) {
-                Paragraph -Style Heading3 "$($Rule.Name)"
-                $Rule | Table -List -Columns Name, Description, State, Conditions
-                BlankLine
-            }
-        }
-    }
-    #endregion
-} | Export-Document -Path ~\Desktop -Format Word, Html -Verbose
+
 

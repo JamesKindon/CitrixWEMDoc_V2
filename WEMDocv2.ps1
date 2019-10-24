@@ -32,34 +32,54 @@ Optional Parameter which will output an appendix with full details for applicati
 Optional Parameter allowing you so specify a custom output directory. Defaults to ~\Desktop
 
 .EXAMPLE
+Documents WEM based on the default SQL instance found on SERVER against the Database named WEM. Default Site (1) is used.
+
 .\DocumentWEM_V2.ps1 -DBServer SERVER -DBName CitrixWEM
+.EXAMPLE
+Documents WEM based on the SQL instance named INSTANCE found on SERVER against the Database named WEM. Default Site (1) is used.
+
 .\DocumentWEM_V2.ps1 -DBServer SERVER\INSTANCE -DBName CitrixWEM
+.EXAMPLE
+Lists all Config Sets in WEM based on the SQL instance named INSTANCE found on SERVER against the Database named WEM.
+
 .\DocumentWEM_V2.ps1 -DBServer SERVER\INSTANCE -DBName CitrixWEM -ListAllConfigSets
+.EXAMPLE
+Documents WEM based on the SQL instance named INSTANCE found on SERVER against the Database named WEM. Site 2 is used.
+
 .\DocumentWEM_V2.ps1 -DBServer SERVER\INSTANCE -DBName CitrixWEM -Site 2
+.EXAMPLE
+Documents WEM based on the SQL instance named INSTANCE found on SERVER against the Database named WEM. Default Site (1) is used. A detailed Appendix is added
+
 .\DocumentWEM_V2.ps1 -DBServer SERVER\INSTANCE -DBName CitrixWEM -Detailed
+.EXAMPLE
+Documents WEM based on the SQL instance named INSTANCE found on SERVER against the Database named WEM. Default Site (1) is used. A detailed Appendix is added. The Output Location is specified
+
 .\DocumentWEM_V2.ps1 -DBServer SERVER\INSTANCE -DBName CitrixWEM -Detailed -OutPutLocation "C:\Temp\Output"
+.EXAMPLE
+Documents WEM based on the SQL instance named INSTANCE found on SERVER against the Database named WEM. A detailed Appendix is added. Default Site (1) is used. a Company Name is Added
+
 .\DocumentWEM_V2.ps1 -DBServer SERVER\INSTANCE -DBName CitrixWEM -Detailed -CompanyName "KindonEnterprises"
 
 .NOTES
-Credits as follows
-Arjan Mensch. For being the PowerShell master in relation to WEM
-Aaron Parker. Functions, Parsing and basic powershell guidance throughout the project
-Iian Brighton. For PSCribo
+Credits as follows:
+Arjan Mensch. For being the PowerShell master in relation to WEM https://github.com/msfreaks 
+Aaron Parker. Functions, Parsing and basic powershell guidance throughout the project https://github.com/aaronparker/
+Iain Brighton. For PSCribo https://github.com/iainbrighton/PScribo
 
 .LINK
 
 #>
 
 Param(
-    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset1')]
+    [Parameter(Mandatory = $true, ParameterSetName = 'Paramset1')]
     [Parameter(ParameterSetName = 'Paramset2')]
-    [string]$DBServer = "KINDO-DDC\SQLEXPRESS", # <- FIx this
+    [string]$DBServer,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset1')]
+    [Parameter(Mandatory = $true, ParameterSetName = 'Paramset1')]
     [Parameter(ParameterSetName = 'Paramset2')]
-    [string]$DBName = "CitrixWEM", # <- FIx this
+    [string]$DBName,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset2')]
+    [Parameter(Mandatory = $true, ParameterSetName = 'Paramset2')]
     [int]$Site = 1,
 
     [Parameter(Mandatory = $false, ParameterSetName = 'Paramset2')]
@@ -814,7 +834,8 @@ function CheckModuleExists {
         }
         catch {
             Write-Warning "$Module module failed to install. Please install the module manually" -Verbose
-            Break #<- Fix This!
+            Write-Warning "Ensure running Script elevated to install module" -Verbose
+            Break
         }
     }
 }
@@ -872,7 +893,6 @@ Function Convert-Hashtable {
     
     }
 }
-
 function StandardOutput {
     param (
         [Parameter()] $OutputObject,
@@ -886,12 +906,16 @@ function StandardOutput {
 }
 
 function WriteDoc {
-    [CmdletBinding()]
-    param()
 
     Document "Citrix WEM Documentation" {
 
-        Paragraph -Style Heading1 "Citrix WEM Documentation"
+        Paragraph -Style Heading1 "Citrix WEM Documentation" -Size 30
+        Paragraph -Style Heading1 (Get-Date -Format d) -Size 24
+        BlankLine
+        if ($CompanyName) {
+            Paragraph -Style Heading1 "For $CompanyName" -Size 30
+        }
+        PageBreak
 
         TOC -Name 'Table of Contents'
         PageBreak
@@ -2430,7 +2454,7 @@ function WriteDoc {
     } | Export-Document -Path $OutputLocation -Format Word, HTML -Verbose
 }
 #endregion
-Import-Module C:\users\JKindon\Documents\GitHub\Citrix.WEMSDK\Citrix.WEMSDK.psd1 -Force
+Import-Module C:\users\JKindon\Documents\GitHub\Citrix.WEMSDK\Citrix.WEMSDK.psd1 -Force # <- This will change once released into PS Gallery
 
 CheckModuleExists -Module "PScribo"
 #CheckModuleExists -Module "Citrix.WEMSDK"
@@ -2446,7 +2470,7 @@ if ($DBName) {
 if ($ListAllConfigSets.IsPresent) {
     Write-Verbose "Listing all Configuration Sets" -Verbose
     # Create a Connection Object to list sites
-    $Connection = New-WEMDatabaseConnection -Server $DBServer -Database $DBName #-Verbose
+    $Connection = New-WEMDatabaseConnection -Server $DBServer -Database $DBName -Verbose
     Get-WEMConfiguration -Connection $Connection | Format-Table
     break
 }
@@ -2474,10 +2498,8 @@ if ($CompanyName) {
 
 if ($Site) {
     Write-Verbose "Selected Site ID: $Site" -Verbose
+    $Connection = New-WEMDatabaseConnection -Server $DBServer -Database $DBName -Verbose
     $WEMSite = Get-WEMConfiguration -Connection $Connection -IdSite $Site -Verbose
 }
 
 WriteDoc
-
-
-

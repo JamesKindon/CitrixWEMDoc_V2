@@ -91,8 +91,8 @@ Param(
     [Parameter(Mandatory = $false, ParameterSetName = 'Paramset1')]
     [switch]$ListAllConfigSets,
     
-    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset2')
-    ][string]$CompanyName
+    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset2')]
+    [string]$CompanyName
 )
 
 #region Translation

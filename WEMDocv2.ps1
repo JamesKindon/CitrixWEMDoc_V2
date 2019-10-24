@@ -1,3 +1,55 @@
+<#
+.SYNOPSIS
+This script documents the Citrix Workspace Environment Management Solution.
+
+Data is gathered using Arjan Mensch's Citrix.WEMSDK PowerShell Module
+
+Output is sent to both Word and HTML format using the PSCribo PowerShell Module
+
+.DESCRIPTION
+
+.PARAMETER DBServer
+Mandatory parameter specifying your SQL Database Server name or instance
+
+.PARAMETER DBName
+Mandatory parameter specifying your Citrix WEM Database Name
+
+.PARAMETER Site
+Specifies the WEM Configuration Set to document via Site ID. Defaults to Site ID 1 (Default Site)
+
+If you do not know your site ID, use the -listAllConfigSets parameter
+
+.PARAMETER ListAllConfigSets
+Optional Parameter which can only be used with DBServer and DBName Params. Creates an initial connection to the WEM Database and lists all Configuration Sets
+
+.PARAMETER CompanyName
+Optional Parameter used to personalise the Document Output for a particular Customer Name
+
+.PARAMETER Detailed
+Optional Parameter which will output an appendix with full details for applications,rules etc
+
+.PARAMETER OutputLocation
+Optional Parameter allowing you so specify a custom output directory. Defaults to ~\Desktop
+
+.EXAMPLE
+.\DocumentWEM_V2.ps1 -DBServer SERVER -DBName CitrixWEM
+.\DocumentWEM_V2.ps1 -DBServer SERVER\INSTANCE -DBName CitrixWEM
+.\DocumentWEM_V2.ps1 -DBServer SERVER\INSTANCE -DBName CitrixWEM -ListAllConfigSets
+.\DocumentWEM_V2.ps1 -DBServer SERVER\INSTANCE -DBName CitrixWEM -Site 2
+.\DocumentWEM_V2.ps1 -DBServer SERVER\INSTANCE -DBName CitrixWEM -Detailed
+.\DocumentWEM_V2.ps1 -DBServer SERVER\INSTANCE -DBName CitrixWEM -Detailed -OutPutLocation "C:\Temp\Output"
+.\DocumentWEM_V2.ps1 -DBServer SERVER\INSTANCE -DBName CitrixWEM -Detailed -CompanyName "KindonEnterprises"
+
+.NOTES
+Credits as follows
+Arjan Mensch. For being the PowerShell master in relation to WEM
+Aaron Parker. Functions, Parsing and basic powershell guidance throughout the project
+Iian Brighton. For PSCribo
+
+.LINK
+
+#>
+
 Param(
     [Parameter(Mandatory = $false, ParameterSetName = 'Paramset1')]
     [Parameter(ParameterSetName = 'Paramset2')]
@@ -25,13 +77,12 @@ Param(
 
 #region Translation
 $DescriptionTable = @{
-
+    #region Environmental Settings
     # Environmental Settings -> Start Menu
-
     # Environmental Settings Management
     processEnvironmentalSettings                            = "Process Environmental Settings"
     processEnvironmentalSettingsForAdmins                   = "Exclude Administrators"
-
+    
     # User Interface: Start Menu
     HideCommonPrograms                                      = "Hide Common Programs"
     RemoveRunFromStartMenu                                  = "Remove Run From Start Menu"
@@ -47,7 +98,7 @@ $DescriptionTable = @{
     Turnoffnotificationareacleanup                          = "Turn Off Notification Area Cleanup"
     TurnOffpersonalizedmenus                                = "Turn Off Personalized Menus"
     ClearRecentprogramslist                                 = "Clear Recent Programs List"
-
+    
     # User Interface: Appearance
     SetSpecificThemeFile                                    = "Set Specific Theme File"
     SpecificThemeFileValue                                  = "Specific Theme File"
@@ -58,7 +109,7 @@ $DescriptionTable = @{
     WallpaperStyle                                          = "Wallpaper Style"
     SetDesktopBackGroundColor                               = "Set Desktop BackGround Color"
     DesktopBackGroundColor                                  = "Desktop BackGround Color"
-
+    
     # Environmental Settings -> Desktop
     # User Interface: Desktop
     NoMyComputerIcon                                        = "Hide My Computer Icon"
@@ -71,11 +122,11 @@ $DescriptionTable = @{
     HideNetworkIcon                                         = "Hide Network Icon"
     HideNetworkConnections                                  = "Hide Network Connections"
     DisableTaskMgr                                          = "Disable Task Manager"
-
+    
     # User Interface: Edge UI
     DisableTLcorner                                         = "Disable Switcher"
     DisableCharmsHint                                       = "Disable Charms Hint"
-
+    
     # Environmental Settings -> Windows Explorer
     # User Interface: Explorer
     DisableRegistryEditing                                  = "Prevent Access to Registry Editing Tools"
@@ -90,13 +141,13 @@ $DescriptionTable = @{
     NoNtSecurity                                            = "Disable Windows Security"
     NoViewContextMenu                                       = "Disable Explorer Context Menu"
     NoTrayContextMenu                                       = "Disable Taskbar Context Menu"
-
+    
     #Drive Restrictions
     HideSpecifiedDrivesFromExplorer                         = "Hide Specified Drives From Explorer"
     ExplorerHiddenDrives                                    = "Hidden Drives"
     RestrictSpecifiedDrivesFromExplorer                     = "Restrict Specified Drives From Explorer"
     ExplorerRestrictedDrives                                = "Restricted Drives"
-
+    
     # Environmental Settings -> Windows Explorer
     # User Interface: Control Panel
     NoProgramsCPL                                           = "Hide Control Panel"
@@ -104,12 +155,12 @@ $DescriptionTable = @{
     RestrictCplList                                         = "Allowed Control Panel Applets"
     DisallowCpl                                             = "Hide Specified Control Panel Applets"
     DisallowCplList                                         = "Hideen Control Panel Applets"
-
+    
     # Environmental Settings -> Known Folders Management
     # Known Folders Restrictions
     DisabledKnownFolders                                    = "Disable Specified Known Folders"
     DisableSpecifiedKnownFolders                            = "Disabled Known Folders"
-
+    
     # Environmental Settings -> SBC / HVD Tuning
     DisableDragFullWindows                                  = "Disable Drag Full Windows"
     DisableCursorBlink                                      = "Disable Cursor Blink"
@@ -123,8 +174,9 @@ $DescriptionTable = @{
     InteractiveDelayValue                                   = "Interactive Delay"
     DisableSmoothScroll                                     = "Disable Smooth Scroll"
     DisableMinAnimate                                       = "Disable MinAnimate"
-
-    #Advanced Settings -> Configuration -> Main Configuration
+    #endregion
+    #region Advanced Settings
+    # Advanced Settings -> Configuration -> Main Configuration
     # Agent Actions
     processVUEMApps                                         = "Process Applications"
     processVUEMPrinters                                     = "Process Printers"
@@ -138,6 +190,7 @@ $DescriptionTable = @{
     processVUEMFileSystemOps                                = "Process File System Operations"
     processVUEMUserDSNs                                     = "Process DSNS"
     processVUEMFileAssocs                                   = "Process File Associations"
+    
     # Agent Service Actions
     LaunchVUEMAgentOnLogon                                  = "Launch Agent at Logon"
     LaunchVUEMAgentOnReconnect                              = "Launch Agent on Reconnect"
@@ -145,34 +198,40 @@ $DescriptionTable = @{
     VUEMAgentType                                           = "Agent Type"
     EnableVirtualDesktopCompatibility                       = "Enable (virtual) Desktop Compatibility"
     ExecuteOnlyCmdAgentInPublishedApplications              = "Execute Only CMD Agent In Published Applications"
+    
     # Shortcut Deletion at startup
     DeleteDesktopShortcuts                                  = "Delete Desktop Shortcuts"
     DeleteStartMenuShortcuts                                = "Delete Start Menu Shortcuts"
     DeleteQuickLaunchShortcuts                              = "Delete Quick Launch Shortcuts"
     DeleteTaskBarPinnedShortcuts                            = "Delete TaskBar Pinned Shortcuts"
     DeleteStartMenuPinnedShortcuts                          = "Delete Start Menu Pinned Shortcuts"
+    
     # Drives Deletion at Startup
     DeleteNetworkDrives                                     = "Delete Network Drives"
+    
     # Printers Deletion at Startup
     DeleteNetworkPrinters                                   = "Delete Network Printers on Startup"
     PreserveAutocreatedPrinters                             = "Preserve Autocreated Printers"
     PreserveSpecificPrinters                                = "Preserve Specific Printers"
     SpecificPreservedPrinters                               = "Specific Preserved Printer List"
-
+    
     # Advanced Settings -> Configuration -> Agent Options
     # Agent Logs
     EnableAgentLogging                                      = "Enable Agent Logging"
     AgentLogFile                                            = "Log File"
     AgentDebugMode                                          = "Debug Mode"
+    
     # Offline Mode Settings
     OfflineModeEnabled                                      = "Enable Offline Mode"
     UseCacheEvenIfOnline                                    = "Use Cache Even If Online"
+    
     #Refresh Settings
     RefreshEnvironmentSettings                              = "Refresh Environment Settings"
     RefreshSystemSettings                                   = "Refresh System Settings"
     RefreshOnEnvironmentalSettingChange                     = "Refresh On Environmental Setting Change"
     RefreshDesktop                                          = "Refresh Desktop"
     RefreshAppearance                                       = "Refresh Appearance"
+    
     #Asynchronous Processing
     aSyncVUEMPrintersProcessing                             = "aSync Printers Processing"
     aSyncVUEMNetDrivesProcessing                            = "aSync Network Drives Processing"
@@ -186,7 +245,7 @@ $DescriptionTable = @{
     aSyncVUEMUserDSNsProcessing                             = "" #<- Doesnt Exist in Console
     aSyncVUEMEnvVariablesProcessing                         = "" #<- Doesnt Exist in Console
     aSyncVUEMVirtualDrivesProcessing                        = "" #<- Doesnt Exist in Console
-
+    
     #Extra Features
     InitialEnvironmentCleanUp                               = "Initial Environment CleanUp"
     InitialDesktopUICleaning                                = "Initial Desktop UI CleanUp"
@@ -198,7 +257,7 @@ $DescriptionTable = @{
     AgentNetworkResourceCheckTimeoutValue                   = "Network Resource Timeout (ms)"
     AgentMaxDegreeOfParallelism                             = "Agent Max Degree Of Parallelism"
     ConnectionStateChangeNotificationEnabled                = "Enable Notifications"
-
+    
     # Advanced Settings -> Configuration -> Advanced Options
     # Agent Actions Enforce Execution
     enforceProcessVUEMApps                                  = "Enforce Applications Processing"
@@ -213,7 +272,7 @@ $DescriptionTable = @{
     enforceProcessVUEMRegValues                             = "" #<- Doesnt Exist in Console
     enforceProcessVUEMIniFilesOps                           = "" #<- Doesnt Exist in Console
     enforceProcessVUEMExtTasks                              = "" #<- Doesnt Exist in Console
-
+    
     # Unassigned Actions Revert Processing
     revertUnassignedVUEMApps                                = "Revert Unassigned Applications"
     revertUnassignedVUEMPrinters                            = "Revert Unassigned Printers"
@@ -227,10 +286,11 @@ $DescriptionTable = @{
     revertUnassignedVUEMFileSystemOps                       = "Revert Unassigned File System Operations"
     revertUnassignedVUEMUserDSNs                            = "Revert Unassigned User DSNs"
     revertUnassignedVUEMFileAssocs                          = "Revert Unassigned File Associations"
+    
     # Automatic Refresh (UI Agent Only)
     EnableUIAgentAutomaticRefresh                           = "Enable Automatic Refresh"
     UIAgentAutomaticRefreshDelay                            = "Refresh Delay (min)"
-
+    
     # Advanced Settings -> Configuration -> Reconnection Actions
     processVUEMAppsOnReconnect                              = "Process Applications"
     processVUEMPrintersOnReconnect                          = "Process Printers"
@@ -244,7 +304,7 @@ $DescriptionTable = @{
     processVUEMFileSystemOpsOnReconnect                     = "Process File System Operations"
     processVUEMUserDSNsOnReconnect                          = "Process User DSNs"
     processVUEMFileAssocsOnReconnect                        = "Process File Associations"
-
+    
     # Advanced Settings -> Configuration -> Advanced Processing
     enforceVUEMAppsFiltersProcessing                        = "Enforce Applications Filters Processing"
     enforceVUEMPrintersFiltersProcessing                    = "Enforce Printers Filters Processing"
@@ -258,7 +318,7 @@ $DescriptionTable = @{
     enforceVUEMFileSystemOpsFiltersProcessing               = "Enforce File System Operations Filters Processing"
     enforceVUEMUserDSNsFiltersProcessing                    = "Enforce User DSNs Filters Processing"
     enforceVUEMFileAssocsFiltersProcessing                  = "Enforce File Associations Filters Processing"
-
+    
     # Advanced Settings -> Configuration -> Service Options
     # Agent Service Advanced Options
     VUEMAgentCacheRefreshDelay                              = "Agent Cache Refresh Delay (min)"
@@ -266,19 +326,19 @@ $DescriptionTable = @{
     VUEMAgentDesktopsExtraLaunchDelay                       = "Agent Extra Launch Delay (ms)"
     AgentServiceDebugMode                                   = "Enable Debug mode"
     byPassie4uinitCheck                                     = "byPass ie4uinit Check"
-
+    
     # Agent Launch Exclusions
     AgentLaunchExcludeGroups                                = "Do not launch VUEM agent for specifed Groups"
     AgentLaunchExcludedGroups                               = "Excluded Groups"
     AgentLaunchIncludeGroups                                = "Launch VUEM agent for specifed Groups"
     AgentLaunchIncludedGroups                               = "Included Groups"
-
+    
     # Advanced Settings -> Configuration -> Agent Switch
     AgentSwitchFeatureToggle                                = ""
     SwitchtoServiceAgent                                    = "Switch to Service Agent"
     CloudConnectors                                         = "Configure Citrix Cloud Connectors"
     UseGPO                                                  = "Skip Citrix Cloud Connector Configuration"
-
+    
     # Advanced Settings -> UI Agent Personalization -> UI Agent Options
     # Branding
     UIAgentSplashScreenBackGround                           = "Custom Background Image Path"
@@ -287,11 +347,11 @@ $DescriptionTable = @{
     UIAgentSkinName                                         = "UI Agent Skin"
     HideUIAgentSplashScreen                                 = "Hide Agent Splashscreen"
     HideUIAgentSplashScreenOnReconnect                      = "Hide Agent Splashscreen on Reconnection"
-
+    
     # Published Applications Behavior
     HideUIAgentIconInPublishedApplications                  = "Hide Agent Icon In Published Applications"
     HideUIAgentSplashScreenInPublishedApplications          = "Hide Agent Splash Screen In Published Applications"
-
+    
     # User Interaction
     AgentExitForAdminsOnly                                  = "Only Admins can Close Agent"
     AgentAllowUsersToManagePrinters                         = "Allow Users To Manage Printers"
@@ -299,12 +359,12 @@ $DescriptionTable = @{
     AgentPreventExitForAdmins                               = "Prevent Admins from Closing Agent"
     AgentEnableApplicationsShortcuts                        = "Enable Applications Shortcuts"
     DisableAdministrativeRefreshFeedback                    = "Disable Administrative Refresh Feedback"
-
+    
     # Advanced Settings -> UI Agent Personalization -> Helpdesk Options
     # Help & Custom Links
     UIAgentHelpLink                                         = "Help Link Action"
     UIAgentCustomLink                                       = "Custom Link Action"
-
+    
     # Screen Capture Options
     AgentAllowScreenCapture                                 = "Enable Screen Capture"
     AgentScreenCaptureEnableSendSupportEmail                = "Enable Send to Support Option"
@@ -320,14 +380,15 @@ $DescriptionTable = @{
     MailEnableUseSMTPCredentials                            = "Use SMTP Credentials"
     MailSMTPUser                                            = "User Name"
     MailSMTPPassword                                        = "Password"
-
+    
     # Power Saving
     AgentShutdownAfterEnabled                               = "Shut down at Specified time (HH:MM)"
     AgentShutdownAfter                                      = "Shut down time"
     AgentShutdownAfterIdleEnabled                           = "Shut down When Idle (seconds)"
     AgentShutdownAfterIdleTime                              = "Idle Time"
     AgentSuspendInsteadOfShutdown                           = "Suspend Instead Of Shutdown"
-
+    #endregion
+    #region System Optimization
     # System Optimization -> CPU Management
     # Spikes Protection
     EnableCPUSpikesProtection                               = "Enable CPU Spike Protection"
@@ -341,16 +402,19 @@ $DescriptionTable = @{
     EnableIntelligentIoOptimization                         = "Enable Intelligent I/O Optimization"
     ExcludeProcessesFromCPUSpikesProtection                 = "Exclude Specified Processes"
     CPUSpikesProtectionExcludedProcesses                    = "Excluded Processes"
+    
     # CPU Priority
     EnableProcessesCpuPriority                              = "Enable Process Priority"
     ProcessesCpuPriorityList                                = "Process Priority List"
+    
     # CPU Affinity
     EnableProcessesAffinity                                 = "Enable Process Affinity" 
     ProcessesAffinityList                                   = "Process Affinity List"
+    
     # CPU Clamping
     EnableProcessesClamping                                 = "Enable Process Clamping"
     ProcessesClampingList                                   = "Process Clamping List"
-
+    
     # System Optimization -> Memory Management
     # Memory Management
     EnableMemoryWorkingSetOptimization                      = "Enable Working Set Optimization"
@@ -358,37 +422,39 @@ $DescriptionTable = @{
     MemoryWorkingSetOptimizationIdleStateLimitPercent       = "Idle State Limit (percent) (if value = enabled then 1%)"
     ExcludeProcessesFromMemoryWorkingSetOptimization        = "Exclude Specified Processes"
     MemoryWorkingSetOptimizationExcludedProcesses           = "Excluded Processes"
-
+    
     # System Optimization -> I/O Priority
     # I/O Priority Process List
     EnableProcessesIoPriority                               = "Enable Processes I/O Priority"
     ProcessesIoPriorityList                                 = "Process List"
-
+    
     # System Optimization -> Fast LogOff
     # Settings
     EnableFastLogoff                                        = "Enable Fast Logoff"
     ExcludeGroupsFromFastLogoff                             = "Exclude Specified Groups"
     FastLogoffExcludedGroups                                = "Excluded Groups"
-
+    #endregion
+    #region Security
+    # Security 
     # Process Security
     EnableProcessesManagement                               = "Enable Processes Management"
-
+    
     EnableProcessesBlackListing                             = "Enable Process BlackList"
     ProcessesManagementBlackListedProcesses                 = "BlackListed Processes"
     ProcessesManagementBlackListExcludeLocalAdministrators  = "Exclude Local Administrators"
     ProcessesManagementBlackListExcludeSpecifiedGroups      = "Exclude Specified Groups"
     ProcessesManagementBlackListExcludedSpecifiedGroupsList = "Excluded Groups"
-
+    
     EnableProcessesWhiteListing                             = "Enable Process Whitelist"
     ProcessesManagementWhiteListedProcesses                 = "Whitelisted Processes"
     ProcessesManagementWhiteListExcludeLocalAdministrators  = "Exclude Local Administrators"
     ProcessesManagementWhiteListExcludeSpecifiedGroups      = "Exclude Specified Groups"
     ProcessesManagementWhiteListExcludedSpecifiedGroupsList = "Excluded Groups"
-
+    
     # App Locker
     AppLockerControllerManagement                           = ""
     AppLockerControllerReplaceModeOn                        = "Process AppLocker Rules in Replace Mode"
-
+    
     EnableProcessesAppLocker                                = "Process Application Security Rules"
     EnableDLLRuleCollection                                 = "Process DLL Rules"
     CollectionExeEnforcementState                           = "Executable Rule Enforcement State"
@@ -396,14 +462,39 @@ $DescriptionTable = @{
     CollectionScriptEnforcementState                        = "Scripts Rule Enforcement State"
     CollectionAppxEnforcementState                          = "Packaged Rule Enforcement State"
     CollectionDllEnforcementState                           = "DLL Rule Enforcement State"
-
+    #endregion
+    #region Policies and Profiles
+    #region USV
+    # Policies and Profiles -> User State Virtualization -> Roaming Profiles Configuration
     # Process USV
     processUSVConfiguration                                 = "Process User State Virtualization Configuration"
     processUSVConfigurationForAdmins                        = "Exclude Administrators"
-
+    #region Microsoft Roaming Profiles
+    # Windows Roaming Profiles Settings
+    SetWindowsRoamingProfilesPath                           = "Set Windows Roaming Profiles Path"
+    WindowsRoamingProfilesPath                              = "Roaming Profile Path"
+    
+    # RDS Roaming Profiles Settings
+    SetRDSRoamingProfilesPath                               = "Set RDS Roaming Profiles Path"
+    RDSRoamingProfilesPath                                  = "RDS Roaming Profile Path"
+    SetRDSHomeDrivePath                                     = "Set RDS Home Drive Path"
+    RDSHomeDrivePath                                        = "RDS Home Drive Path"
+    RDSHomeDriveLetter                                      = "RDS Home Drive Letter"
+    
+    # Policies and Profiles -> User State Virtualization -> Roaming Profiles Advanced Configuration
+    SetRoamingProfilesFoldersExclusions                     = "Enable Folders Exclusions"
+    RoamingProfilesFoldersExclusions                        = "Excluded Folders"
+    DeleteRoamingCachedProfiles                             = "Delete Cached Copies of Roaming Profiles"
+    AddAdminGroupToRUP                                      = "Add the Administrators Security Group to Roaming User Profiles"
+    CompatibleRUPSecurity                                   = "Do Not Check for User Ownership of Roaming Profile Folders"
+    DisableSlowLinkDetect                                   = "Do Not Detect Slow Network Connections"     
+    SlowLinkProfileDefault                                  = "Wait for Remote User Profile"
+    #endregion
+    #region Folder Redirection
+    # Policies and Profiles -> User State Virtualization -> Folder Redirection
     #Folder Redirection
     processFoldersRedirectionConfiguration                  = "Process Folder Redirection Configuration"
-
+    
     # Folder Redirection Process Settings
     processDesktopRedirection                               = "Redirect Desktop"
     processPersonalRedirection                              = "Redirect Documents"
@@ -433,11 +524,13 @@ $DescriptionTable = @{
     DownloadsRedirectedPath                                 = "Downloads Path"
     LinksRedirectedPath                                     = "Links Path"
     SearchesRedirectedPath                                  = "Searches Path"
-
+    #endregion
+    #endregion
+    #region Citrix Profile Management
     # Policies and Profiles -> Citrix Profile Management Settings -> Main Citrix Profile Management Settings
     # Citrix profile Management
     UPMManagementEnabled                                    = "Enable Profile Management Configuration"
-
+    
     # Profile Management
     ServiceActive                                           = "Enable Profile Management"
     SetProcessedGroups                                      = "Set Processed Groups"
@@ -452,7 +545,7 @@ $DescriptionTable = @{
     PSMidSessionWriteBack                                   = "Enable active write back"
     PSMidSessionWriteBackReg                                = "Enable active write back registry"
     OfflineSupport                                          = "Enable offline profile support"
-
+    
     # Policies and Profiles -> Citrix Profile Management Settings -> Profile Handling
     # Profile Handling
     DeleteCachedProfilesOnLogoff                            = "Delete locally cached profiles on logoff"
@@ -468,7 +561,7 @@ $DescriptionTable = @{
     TemplateProfileOverridesLocalProfile                    = "Template profile overrides local profile"
     TemplateProfileOverridesRoamingProfile                  = "Template profile overrides local profile"
     TemplateProfileIsMandatory                              = "Template profile used as Citrix mandatory profile for all logons"
-
+    
     # Policies and Profiles -> Citrix Profile Management Settings -> Advanced Settings
     # Advanced Settings
     SetLoadRetries                                          = "Set number of retires when accessing locked files"
@@ -484,7 +577,7 @@ $DescriptionTable = @{
     CEIPEnabled                                             = "Customer experience improvement program"
     OutlookSearchRoamingEnabled                             = "Enabled search index roaming for Microsoft Outlook ssers"
     SearchBackupRestoreEnabled                              = "Outlook search index database - backup and restore"
-
+    
     # Policies and Profiles -> Citrix Profile Management Settings -> Log Settings
     # Log Settings
     LoggingEnabled                                          = "Enable Logging"
@@ -494,7 +587,7 @@ $DescriptionTable = @{
     MaxLogSize                                              = "Maximum size in bytes"
     SetPathToLogFile                                        = "Set path to log file"
     PathToLogFile                                           = "Path to log file"
-
+    
     # Policies and Profiles -> Citrix Profile Management Settings -> Registry
     # Registry
     LastKnownGoodRegistry                                   = "NTUSER.DAT Backup"
@@ -506,7 +599,7 @@ $DescriptionTable = @{
     ExclusionListRegistry                                   = "Registry Exclusions"
     SetInclusionListRegistry                                = "Enable Registry Inclusions"
     InclusionListRegistry                                   = "Registry Inclusions"
-
+    
     # Policies and Profiles -> Citrix Profile Management Settings -> File System
     # File System
     EnableLogonExclusionCheck                               = "Enable Logon Exclusion Check"
@@ -546,7 +639,7 @@ $DescriptionTable = @{
     SyncExclusionListFiles                                  = "File Exclusion List"
     SetSyncExclusionListDir                                 = "Enable Folder exclusions"
     SyncExclusionListDir                                    = "Folder Exclusion List"
-
+    
     # Policies and Profiles -> Citrix Profile Management Settings -> Synchronization
     # Synchronization
     SetSyncDirList                                          = "Enable Directory Synchronization"
@@ -559,7 +652,7 @@ $DescriptionTable = @{
     ProfileContainerList                                    = "Profile Container List"
     SetLargeFileHandlingList                                = "Enable Large File Handling"
     LargeFileHandlingList                                   = "Large File Handling List"
-
+    
     # Policies and Profiles -> Citrix Profile Management Settings -> Streamed User Profiles
     # Streamed User Profiles
     PSEnabled                                               = "Enable Profile Streaming"
@@ -571,7 +664,7 @@ $DescriptionTable = @{
     PSUserGroupsList                                        = "Streamed user profile groups"
     EnableStreamingExclusionList                            = "Enable Profile Streaming Exclusion List - Directories"
     StreamingExclusionList                                  = "Streaming Excluded Directories List"
-
+    
     # Policies and Profiles -> Citrix Profile Management Settings -> Cross Platform Settings
     # Cross Platform Settings
     CPEnabled                                               = "Enable cross-platform settings"
@@ -582,15 +675,17 @@ $DescriptionTable = @{
     SetCPPath                                               = "Set path to cross-platform settings store"
     CPPath                                                  = "Path to cross-platform settings store"
     CPMigrationFromBaseProfileToCPStore                     = "Enable source for creating cross-platform settings"
-
+    #endregion
+    #endregion
+    #region Transformer Settings
     # Transformer Settings -> General -> General Settings
     # General Settings
     IsKioskEnabled                                          = "Enable Transformer"
     GeneralStartUrl                                         = "Web Interface URL"
-
+    
     # Appearance
     GeneralTitle                                            = "Custom Title"
-
+    
     GeneralWindowMode                                       = "Enable Window Mode"
     GeneralClockEnabled                                     = "Display Clock"
     GeneralClockUses12Hours                                 = "Show 12 Hour-Clock"
@@ -600,7 +695,7 @@ $DescriptionTable = @{
     GeneralShowNavigationButtons                            = "Show Navigation Buttons"
     # Change Unlock Password
     GeneralUnlockPassword                                   = "Unlock Password"
-
+    
     # Transformer Settings -> General -> Site Settings
     # Site Settings
     SitesIsListEnabled                                      = "Enable Site List"
@@ -632,7 +727,7 @@ $DescriptionTable = @{
     SetCitrixReceiverFSOMode                                = "Lock Citrix Desktop Viewer"
     #AdvancedShowWifiSettings = "" <- Not in Console
     #AdvancedLockCtrlAltDel = "" <- not in Console
-
+    
     # Administration Settings
     AdministrationHideDisplaySettings                       = "Hide Display Settings"
     AdministrationHideKeyboardSettings                      = "Hide Keyboard Settings"
@@ -665,7 +760,8 @@ $DescriptionTable = @{
     PowerShutdownAfterSpecifiedTime                         = "Shut down at Specified Time (HH:MM)"
     PowerShutdownAfterIdleTime                              = "Shut down When Idel (Seconds)"
     PowerDontCheckBattery                                   = "Don't Check Battery Status"
-
+    #endregion
+    #region Monitoring
     # Monitoring
     BusinessDayStartHour                                    = "Business Day Start (hour)"
     BusinessDayEndHour                                      = "Business Day End (hour)"
@@ -673,7 +769,7 @@ $DescriptionTable = @{
     WorkDaysFilter                                          = "Enabled Work Days"
     ReportsBootTimeMinimum                                  = "Boot Time Minimum Value"
     ReportsLoginTimeMinimum                                 = "Login Time Minimum Value"
-
+    
     EnableApplicationReportsWindows2K3XPCompliance          = ""
     LocalDatabaseRetentionPeriod                            = ""
     EnableUserExperienceMonitoring                          = ""
@@ -684,7 +780,8 @@ $DescriptionTable = @{
     EnableSystemMonitoring                                  = ""
     EnableStrictPrivacy                                     = ""
     EnableGlobalSystemMonitoring                            = ""
-
+    #endregion
+    #region Advanced Hidden Params
     # Advanced Parameters
     ADSearchForestBlacklist                                 = ""
     AgentSiteIdCacheOverdueTime                             = ""
@@ -695,6 +792,7 @@ $DescriptionTable = @{
     DisplayUPMStatusToggle                                  = ""
     ProfileContainerToggle                                  = ""
     AgentDomainCacheOverdueTime                             = ""
+    #endregion
 }
 #endregion
 
@@ -786,7 +884,6 @@ function StandardOutput {
     $OutputObject | Table -Columns Name, Description, State -Headers Setting, Description, Value -ColumnWidths $Col1, $col2, $Col3
     BlankLine
 }
-#endregion
 
 function WriteDoc {
     [CmdletBinding()]
@@ -2332,7 +2429,7 @@ function WriteDoc {
         #endregion
     } | Export-Document -Path $OutputLocation -Format Word, HTML -Verbose
 }
-
+#endregion
 Import-Module C:\users\JKindon\Documents\GitHub\Citrix.WEMSDK\Citrix.WEMSDK.psd1 -Force
 
 CheckModuleExists -Module "PScribo"

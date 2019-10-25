@@ -20,7 +20,7 @@ Specifies the WEM Configuration Set to document via Site ID. Defaults to Site ID
 If you do not know your site ID, use the -listAllConfigSets parameter
 
 .PARAMETER ListAllConfigSets
-Optional Parameter which can only be used with DBServer and DBName Params. Creates an initial connection to the WEM Database and lists all Configuration Sets
+Optional Parameter. Creates an initial connection to the WEM Database and lists all Configuration Sets
 
 .PARAMETER CompanyName
 Optional Parameter used to personalise the Document Output for a particular Customer Name
@@ -71,27 +71,25 @@ Iain Brighton. For PSCribo https://github.com/iainbrighton/PScribo
 #>
 
 Param(
-    [Parameter(Mandatory = $true, ParameterSetName = 'Paramset1')]
-    [Parameter(ParameterSetName = 'Paramset2')]
+    [Parameter(Mandatory = $true)]
     [string]$DBServer,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'Paramset1')]
-    [Parameter(ParameterSetName = 'Paramset2')]
+    [Parameter(Mandatory = $true)]
     [string]$DBName,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'Paramset2')]
+    [Parameter(Mandatory = $false)]
     [int]$Site = 1,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset2')]
+    [Parameter(Mandatory = $false)]
     [string]$OutputLocation = "~\Desktop",
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset2')]
+    [Parameter(Mandatory = $false)]
     [switch]$Detailed,
 
-    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset1')]
+    [Parameter(Mandatory = $false)]
     [switch]$ListAllConfigSets,
     
-    [Parameter(Mandatory = $false, ParameterSetName = 'Paramset2')]
+    [Parameter(Mandatory = $false)]
     [string]$CompanyName
 )
 

@@ -906,14 +906,15 @@ function StandardOutput {
 function WriteDoc {
 
     Document "Citrix WEM Documentation" {
-
-        Paragraph -Style Heading1 "Citrix WEM Documentation" -Size 30
-        Paragraph -Style Heading1 (Get-Date -Format d) -Size 24
-        BlankLine
-        if ($CompanyName) {
-            Paragraph -Style Heading1 "For $CompanyName" -Size 30
+        
+        Section -Name "Citrix WEM Documentation" -Style Heading1 -ExcludeFromTOC  {
+            Paragraph (Get-Date -Format d)
+            BlankLine
+            if ($CompanyName) {
+                Paragraph "For $CompanyName"
+            }
+            PageBreak
         }
-        PageBreak
 
         TOC -Name 'Table of Contents'
         PageBreak
@@ -944,7 +945,7 @@ function WriteDoc {
                 $ActionType = "Application"
                 CountAndReportActions
                 if ($Count -ne 0) {
-                    $WEMApplications | Table -Columns Name, Description, Type
+                    $WEMApplications | Table -Columns Name, Description, Type -ColumnWidths 40,40,20
                 }
             }
             Section -Name "Actions - Printers" -Style Heading2 {
@@ -953,7 +954,7 @@ function WriteDoc {
                 $ActionType = "Printer"
                 CountAndReportActions
                 if ($Count -ne 0) {
-                    $WEMPrinters | Table -Columns Name, DisplayName, TargetPath, ActionType
+                    $WEMPrinters | Table -Columns Name, TargetPath, ActionType -ColumnWidths 40,40,20
                 }
             }
             Section -Name "Actions - Network Drives" -Style Heading2 {
@@ -962,7 +963,7 @@ function WriteDoc {
                 $ActionType = "Network Drive"
                 CountAndReportActions
                 if ($Count -ne 0) {
-                    $WEMNetworkDrives | Table -Columns Name, DisplayName, Description, TargetPath
+                    $WEMNetworkDrives | Table -Columns Name, Description, TargetPath
                 }
             }
             Section -Name "Actions - Virtual Drives" -Style Heading2 {
@@ -971,7 +972,7 @@ function WriteDoc {
                 $ActionType = "Virtual Drive"
                 CountAndReportActions
                 if ($Count -ne 0) {
-                    $WEMVirtualDrives | Table -Columns Name, Description, ActionType, TargetPath, SetAsHomeDriveEnabled
+                    $WEMVirtualDrives | Table -Columns Name, Description, TargetPath
                 }
             }
             Section -Name "Actions - Registry Values" -Style Heading2 {
@@ -980,7 +981,7 @@ function WriteDoc {
                 $ActionType = "Registry Value"
                 CountAndReportActions
                 if ($Count -ne 0) {            
-                    $WEMRegistryValues | Table -Columns Name, Description, ActionType, State
+                    $WEMRegistryValues | Table -Columns Name, Description, ActionType -ColumnWidths 40,40,20
                 }
             }
             Section -Name "Actions - Environment Variables" -Style Heading2 {
@@ -989,7 +990,7 @@ function WriteDoc {
                 $ActionType = "Environment Variable"
                 CountAndReportActions
                 if ($Count -ne 0) {
-                    $WEMEnvironmentVariables | Table -Columns Name, VariableName, VariableValue, VariableType
+                    $WEMEnvironmentVariables | Table -Columns Name, VariableName, VariableValue
                 }
             }
             Section -Name "Actions - Ports" -Style Heading2 {
@@ -1016,7 +1017,7 @@ function WriteDoc {
                 $ActionType = "External Task"
                 CountAndReportActions  
                 if ($Count -ne 0) {          
-                    $WEMExternalTasks | Table -Columns Name, TargetPath, TargetArguments
+                    $WEMExternalTasks | Table -Columns Name, TargetPath, TargetArguments -ColumnWidths 30,30,40
                 }
             }
             Section -Name "Actions - File System Operations" -Style Heading2 {
@@ -1025,7 +1026,7 @@ function WriteDoc {
                 $ActionType = "File System Operation"
                 CountAndReportActions            
                 if ($Count -ne 0) {
-                    $WEMFileSystemObjects | Table -Columns Name, ActionType, SourcePath
+                    $WEMFileSystemObjects | Table -Columns Name, SourcePath, ActionType -ColumnWidths 30,40,30
                 }
             }
             Section -Name "Actions - User DSNs" -Style Heading2 {
@@ -1034,7 +1035,7 @@ function WriteDoc {
                 $ActionType = "User DSN"
                 CountAndReportActions
                 if ($Count -ne 0) { 
-                    $WEMUserDSNs | Table -Columns Name, ActionType, TargetName
+                    $WEMUserDSNs | Table -Columns Name, TargetName, ActionType -ColumnWidths 30,40,30
                 }
             }
             Section -Name "Actions - File Associations" -Style Heading2 {
@@ -1443,7 +1444,7 @@ function WriteDoc {
                 )
                 $Settings = $WEMUSVConfiguration.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
                 Paragraph "The following Microsoft Roaming Profile Configurations are in place"
-                StandardOutput -OutputObject $Settings
+                StandardOutput -OutputObject $Settings -Col1 30 -Col2 30 -Col3 40
             }
             Section -Name "USV - Folder Redirection Configuration" -Style Heading2 {
                 # Folder Redirection Configuration

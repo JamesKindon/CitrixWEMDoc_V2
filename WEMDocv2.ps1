@@ -912,6 +912,8 @@ function StandardOutput {
 }
 
 function WriteDoc {
+    [cmdletbinding()]
+    param()
 
     Document "Citrix WEM Documentation" {
         # ============================================================================
@@ -2508,7 +2510,7 @@ function WriteDoc {
             }
         }
         #endregion
-    } | Export-Document -Path $OutputLocation -Format Word, HTML #-Verbose
+    } | Export-Document -Path $OutputLocation -Format Word, HTML -Verbose
 }
 #endregion
 

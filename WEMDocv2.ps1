@@ -69,7 +69,9 @@ Iain Brighton. For PSCribo https://github.com/iainbrighton/PScribo
 .LINK
 
 #>
-
+# ============================================================================
+# Parameters
+# ============================================================================
 Param(
     [Parameter(Mandatory = $true)]
     [string]$DBServer,
@@ -94,6 +96,9 @@ Param(
 )
 
 #region Translation
+# ============================================================================
+# Translation Details: SQL DB Record Name -> Console Description
+# ============================================================================
 $DescriptionTable = @{
     #region Environmental Settings
     # Environmental Settings -> Start Menu
@@ -815,6 +820,9 @@ $DescriptionTable = @{
 #endregion
 
 #region functions
+# ============================================================================
+# Functions
+# ============================================================================
 function CheckModuleExists {
     param (
         $Module
@@ -906,7 +914,9 @@ function StandardOutput {
 function WriteDoc {
 
     Document "Citrix WEM Documentation" {
-        
+        # ============================================================================
+        # Cover Page and ToC
+        # ============================================================================
         Section -Name "Citrix WEM Documentation" -Style Heading1 -ExcludeFromTOC  {
             Paragraph (Get-Date -Format d)
             BlankLine
@@ -919,6 +929,9 @@ function WriteDoc {
         TOC -Name 'Table of Contents'
         PageBreak
         #region Config Sets
+        # ============================================================================
+        # WEM Config Sets
+        # ============================================================================
         Section -Name "WEM Configuration Sets" -Style Heading1 {
             $WEMConfigSets = Get-WEMConfiguration -Connection $Connection -Verbose
             Paragraph "There are ($($WEMConfigSets.Count) Configuration Sets found in the deployment):"
@@ -929,6 +942,9 @@ function WriteDoc {
         PageBreak
         #endregion
         #region Actions
+        # ============================================================================
+        # WEM Actions
+        # ============================================================================
         Section -Name "WEM Actions" -Style Heading1 {
             Section -Name "Actions - Action Groups" -Style Heading2 {
                 $WEMActionGroups = Get-WEMActionGroup -Connection $Connection -IdSite $Site -Verbose | Select-Object Name, Description, @{Name = 'Actions'; Expression = { $_.Actions -join '; ' } }, State
@@ -1051,6 +1067,9 @@ function WriteDoc {
         PageBreak
         #endregion
         #region Filters
+        # ============================================================================
+        # WEM Filters
+        # ============================================================================
         Section -Name "WEM Filters" -Style Heading1 {
             Section -Name "WEM Conditions" -Style Heading2 {
                 $WEMConditions = Get-WEMCondition -Connection $Connection -IdSite $Site -Verbose
@@ -1067,6 +1086,9 @@ function WriteDoc {
         PageBreak
         #endregion
         #region Assignments
+        # ============================================================================
+        # WEM Assignments
+        # ============================================================================
         Section -Name "WEM Action Assignments" -Style Heading1 {
             Section -Name "Assignments - Action Groups" -Style Heading2 {
                 $WEMActionGroupAssignments = Get-WEMActionGroupAssignment -Connection $Connection -IdSite $Site -Verbose
@@ -1189,6 +1211,9 @@ function WriteDoc {
         PageBreak
         #endregion
         #region System Optimization
+        # ============================================================================
+        # WEM System Optimization
+        # ============================================================================
         Section -Name "WEM System Optimization" -Style Heading1 {
             $WEMSystemOptimization = Get-WEMSystemOptimization -Connection $Connection -IdSite $Site -Verbose
             Section -Name "CPU Management" -Style Heading2 {
@@ -1275,6 +1300,9 @@ function WriteDoc {
         PageBreak
         #endregion
         #region Policies and Profiles
+        # ============================================================================
+        # WEM Policies and Profiles
+        # ============================================================================
         Section -Name "WEM Policies and Profiles" -Style Heading1 {
             $WEMEnvironmentalSettings = Get-WEMEnvironmentalSettings -Connection $Connection -IdSite $Site -Verbose
             Section -Name "Environmental Settings" -Style Heading2 {
@@ -1731,6 +1759,9 @@ function WriteDoc {
         PageBreak
         #endregion
         #region Security
+        # ============================================================================
+        # WEM Security
+        # ============================================================================
         Section -Name "WEM Security" -Style Heading1 {
             $WEMSystemOptimization = Get-WEMSystemOptimization -Connection $Connection -IdSite $Site -Verbose
         
@@ -1792,6 +1823,9 @@ function WriteDoc {
         PageBreak
         #endregion
         #region Active Directory Objects
+        # ============================================================================
+        # WEM Active Directory Objects
+        # ============================================================================
         Section -Name "WEM Active Directory Objects" -Style Heading1 {
             Section -Name "Computer Objects Assigned" -Style Heading2 {
                 $WEMComputers = Get-WEMADAgentObject -Connection $Connection -IdSite $Site -Verbose
@@ -1814,6 +1848,9 @@ function WriteDoc {
         PageBreak
         #endregion
         #region Transformer Settings
+        # ============================================================================
+        # WEM Transformer Settings
+        # ============================================================================
         Section -Name "WEM Transformer Settings" -Style Heading1 {
             $WEMTransformerSettings = Get-WEMTransformerSettings -Connection $Connection -IdSite $site -Verbose
             Section -Name "General - General Settings" -Style Heading2 {
@@ -1955,6 +1992,9 @@ function WriteDoc {
         PageBreak
         #endregion
         #region Advanced Settings
+        # ============================================================================
+        # WEM Advanced Settings
+        # ============================================================================
         Section -Name "WEM Advanced Settings" -Style Heading1 {
             $WEMAgentSettings = Get-WEMAgentSettings -Connection $Connection -IdSite 1 -Verbose
             Section -Name "Configuration - Main Configuration" -Style Heading2 {
@@ -2281,6 +2321,9 @@ function WriteDoc {
         PageBreak
         #endregion
         #region Administration
+        # ============================================================================
+        # WEM Administration
+        # ============================================================================
         Section -Name "WEM Administration" -Style Heading1 {
             $GlobalAdmins = Get-WEMAdministrator -Connection $Connection -Verbose | Where-Object { $_.Permissions -like "Global Admin *" }
             $SiteAdmins = Get-WEMAdministrator -Connection $Connection -IdSite $Site -Verbose
@@ -2299,6 +2342,9 @@ function WriteDoc {
         PageBreak
         #endregion
         #region Monitoring
+        # ============================================================================
+        # WEM Monitoring
+        # ============================================================================
         Section -Name "WEM Monitoring" -Style Heading1 {
             $WEMMonitoringSettings = Get-WEMSystemMonitoringSettings -Connection $Connection -IdSite $Site -Verbose
             Section -Name "Configuration" -Style Heading2 {
@@ -2334,6 +2380,9 @@ function WriteDoc {
         PageBreak
         #endregion
         #region WEM Advanced Options
+        # ============================================================================
+        # WEM Advanced Options
+        # ============================================================================
         Section -Name "WEM Advanced Options" -Style Heading1 {
             $WEMAdvancedParams = Get-WEMParameters -Connection $Connection -IdSite $Site -Verbose
             Paragraph "The following Advanced Options exist within the environment, though are not always visbile in the WEM Console"
@@ -2353,8 +2402,14 @@ function WriteDoc {
         PageBreak
         #endregion
         #region Appendix
+        # ============================================================================
+        # Detailed Appendix
+        # ============================================================================
         if ($Detailed.IsPresent) {
             Write-Verbose "Detailed output requested" -Verbose
+            # ============================================================================
+            # Appendix - Actions
+            # ============================================================================
             Section -Name "Detailed Appendix - Actions" -Style Heading1 {
                 Section -Name "Actions - Applications" -Style Heading2 {
                     $WEMApplications = Get-WEMApplication -Connection $Connection -IdSite $Site -Verbose
@@ -2426,6 +2481,9 @@ function WriteDoc {
                     }
                 }
             }
+            # ============================================================================
+            # Appendix - Filters
+             # ============================================================================
             Section -Name "Detailed Appendix - Filters" -Style Heading1 {
                 Section -Name "Conditions" -Style Heading2 {
                     $WEMConditions = Get-WEMCondition -Connection $Connection -IdSite $Site -Verbose
@@ -2450,9 +2508,13 @@ function WriteDoc {
             }
         }
         #endregion
-    } | Export-Document -Path $OutputLocation -Format Word, HTML -Verbose
+    } | Export-Document -Path $OutputLocation -Format Word, HTML #-Verbose
 }
 #endregion
+
+# ============================================================================
+# Execute  the Script
+# ============================================================================
 Import-Module C:\users\JKindon\Documents\GitHub\Citrix.WEMSDK\Citrix.WEMSDK.psd1 -Force # <- This will change once released into PS Gallery
 
 CheckModuleExists -Module "PScribo"
@@ -2482,11 +2544,11 @@ if ($OutputLocation) {
     else {
         try {
             Write-Warning "$OutputLocation does not exist, Attempting to create" -Verbose
-            New-Item -Path $OutputLocation -ItemType Directory -WhatIf # <- Fix This!
+            New-Item -Path $OutputLocation -ItemType Directory
         }
         catch {
             Write-Warning "Failed to Create $OutputLocation Directory" -Verbose
-            #Break <- Fix This!
+            Break
         }
     }
 }

@@ -1833,17 +1833,6 @@ function WriteDoc {
                     $AppLockerRules | Table -Columns Name, Description, CollectionType, RuleType, Permission
                 }
                 BlankLine
-
-                #AppLocker Conditions
-                #$AppLockerConditions = Get-WEMAppLockerRuleConditionObject -Connection $Connection -Verbose | Select-Object Type,IsException,Path
-                #Paragraph "AppLocker Condition List" -Style Heading2
-                #BlankLine
-                #$Count = ($AppLockerConditions | Measure-Object).Count
-                #$ActionType = "AppLocker Conditions"
-                #CountAndReportActions
-                #if ($Count -ne 0) {
-                #    $AppLockerConditions | Table -Columns Type, IsException, Path
-                #}
             }
         }
         PageBreak

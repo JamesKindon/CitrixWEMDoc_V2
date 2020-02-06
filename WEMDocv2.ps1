@@ -2531,14 +2531,14 @@ function WriteDoc {
                     Paragraph "Detailed Configurations for all AppLocker Rules are outlined below"
                     BlankLine
                     foreach ($Rule in $AppLockerRules) {
-                        Paragraph -Style Heading3 "$($rule.Name)"
+                        Paragraph -Style Heading3 "$($Rule.Name)"
                         $RuleDetail = [PSCustomObject] @{
                             Name = $Rule.Name
                             Description = $Rule.Description
-                            RuleConditionType = $rule.Condition.Type
+                            RuleConditionType = $Rule.Condition.Type
                             Permission = $Rule.Permission
                             RulePath = $Rule.Condition.Path
-                            RuleException = $rule.Exceptions.Path
+                            RuleException = $Rule.Exceptions.Path
                             RuleAssignments = $Rule.Assignments
                         }
                         $RuleDetail = $RuleDetail | Select-Object Name,Description,RuleConditionType,Permission,RulePath,@{Name = 'RuleException'; Expression = { $_.RuleException -join '; ' } },@{Name = 'RuleAssignments'; Expression = { $_.RuleAssignments -join '; ' } }

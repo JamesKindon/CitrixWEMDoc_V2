@@ -2532,12 +2532,21 @@ function WriteDoc {
                     BlankLine
                     foreach ($Rule in $AppLockerRules) {
                         Paragraph -Style Heading3 "$($rule.Name)"
-                        $Rule | Table -List -Columns Name, Description, CollectionType, RuleType, Permission, Condition, Exceptions, Assignments #(need to figure out condition and exceptions)
+                        $RuleDetail = [PSCustomObject] @{
+                            Name = $Rule.Name
+                            Description = $Rule.Description
+                            RuleConditionType = $rule.Condition.Type
+                            Permission = $Rule.Permission
+                            RulePath = $Rule.Condition.Path
+                            RuleException = $rule.Exceptions.Path
+                            RuleAssignments = $Rule.Assignments
+                        }
+                        $RuleDetail = $RuleDetail | Select-Object Name,Description,RuleConditionType,Permission,RulePath,@{Name = 'RuleException'; Expression = { $_.RuleException -join '; ' } },@{Name = 'RuleAssignments'; Expression = { $_.RuleAssignments -join '; ' } }
+                        $RuleDetail | Table -List -Columns Name,Description,RuleConditionType,Permission,RulePath,RuleException,RuleAssignments
                         BlankLine
-                    }
+                   }  
                 }
             }
-
         }
         #endregion
     } | Export-Document -Path $OutputLocation -Format Word, HTML -Verbose
@@ -2547,7 +2556,6 @@ function WriteDoc {
 # ============================================================================
 # Execute  the Script
 # ============================================================================
-#Import-Module C:\users\JKindon\Documents\GitHub\Citrix.WEMSDK\Citrix.WEMSDK.psd1 -Force # <- This will change once released into PS Gallery
 
 CheckModuleExists -Module "PScribo"
 CheckModuleExists -Module "Citrix.WEMSDK"

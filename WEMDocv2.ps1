@@ -382,6 +382,7 @@ $DescriptionTable = @{
     AgentPreventExitForAdmins                               = "Prevent Admins from Closing Agent"
     AgentEnableApplicationsShortcuts                        = "Enable Applications Shortcuts"
     DisableAdministrativeRefreshFeedback                    = "Disable Administrative Refresh Feedback"
+    AgentAllowUsersToResetCachedActions                     = "Allow Users to Reset Actions"
     
     # Advanced Settings -> UI Agent Personalization -> Helpdesk Options
     # Help & Custom Links
@@ -1798,7 +1799,7 @@ function WriteDoc {
                 $Settings = $WEMSystemOptimization.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
                 StandardOutput -OutputObject $Settings
             }
-            Section -Name "Application Security" -Style Heading2 {   
+            Section -Name "Application Security Configuration (AppLocker)" -Style Heading2 {   
                 #AppLocker Basics
                 Paragraph "The following configurations relate to AppLocker Settings"
                 $SettingsList = @("AppLockerControllerManagement",
@@ -1820,6 +1821,18 @@ function WriteDoc {
                 )
                 $Settings = $AppLockerProcessSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
                 StandardOutput -OutputObject $Settings
+
+                #AppLocker Rules
+                $AppLockerRules = Get-WEMAppLockerRule -Connection $Connection -IdSite $Site -Verbose | Select-Object Name,Description,CollectionType,RuleType,Permission
+                Paragraph "AppLocker Rules" -Style Heading2
+                BlankLine
+                $Count = ($AppLockerRules | Measure-Object).Count
+                $ActionType = "AppLocker Rules"
+                CountAndReportActions
+                if ($Count -ne 0) {
+                    $AppLockerRules | Table -Columns Name, Description, CollectionType, RuleType, Permission
+                }
+                BlankLine
             }
         }
         PageBreak
@@ -2273,7 +2286,8 @@ function WriteDoc {
                     "AgentAllowUsersToManageApplications",
                     "AgentPreventExitForAdmins",
                     "AgentEnableApplicationsShortcuts",
-                    "DisableAdministrativeRefreshFeedback"
+                    "DisableAdministrativeRefreshFeedback",
+                    "AgentAllowUsersToResetCachedActions"
                 )
                 $Settings = $WEMAgentSettings.GetEnumerator() | Where-Object { $_.Key -in $SettingsList } | Sort-Object -Property Key
                 StandardOutput -OutputObject $Settings
@@ -2485,7 +2499,7 @@ function WriteDoc {
             }
             # ============================================================================
             # Appendix - Filters
-             # ============================================================================
+            # ============================================================================
             Section -Name "Detailed Appendix - Filters" -Style Heading1 {
                 Section -Name "Conditions" -Style Heading2 {
                     $WEMConditions = Get-WEMCondition -Connection $Connection -IdSite $Site -Verbose
@@ -2508,6 +2522,31 @@ function WriteDoc {
                     }
                 }
             }
+            # ============================================================================
+            # Appendix - AppLocker
+            # ============================================================================
+            Section -Name "Detailed Appendix - AppLocker" -Style Heading2 {
+                Section -Name "AppLocker Rules" -Style Heading2 {
+                    $AppLockerRules = Get-WEMAppLockerRule -Connection $Connection -IdSite $Site -Verbose
+                    Paragraph "Detailed Configurations for all AppLocker Rules are outlined below"
+                    BlankLine
+                    foreach ($Rule in $AppLockerRules) {
+                        Paragraph -Style Heading3 "$($Rule.Name)"
+                        $RuleDetail = [PSCustomObject] @{
+                            Name = $Rule.Name
+                            Description = $Rule.Description
+                            RuleConditionType = $Rule.Condition.Type
+                            Permission = $Rule.Permission
+                            RulePath = $Rule.Condition.Path
+                            RuleException = $Rule.Exceptions.Path
+                            RuleAssignments = $Rule.Assignments
+                        }
+                        $RuleDetail = $RuleDetail | Select-Object Name,Description,RuleConditionType,Permission,RulePath,@{Name = 'RuleException'; Expression = { $_.RuleException -join '; ' } },@{Name = 'RuleAssignments'; Expression = { $_.RuleAssignments -join '; ' } }
+                        $RuleDetail | Table -List -Columns Name,Description,RuleConditionType,Permission,RulePath,RuleException,RuleAssignments
+                        BlankLine
+                   }  
+                }
+            }
         }
         #endregion
     } | Export-Document -Path $OutputLocation -Format Word, HTML -Verbose
@@ -2517,10 +2556,9 @@ function WriteDoc {
 # ============================================================================
 # Execute  the Script
 # ============================================================================
-Import-Module C:\users\JKindon\Documents\GitHub\Citrix.WEMSDK\Citrix.WEMSDK.psd1 -Force # <- This will change once released into PS Gallery
 
 CheckModuleExists -Module "PScribo"
-#CheckModuleExists -Module "Citrix.WEMSDK"
+CheckModuleExists -Module "Citrix.WEMSDK"
 
 if ($DBServer) {
     Write-Verbose "Selected DBName Server: $DBServer" -Verbose

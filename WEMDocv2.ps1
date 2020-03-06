@@ -2554,7 +2554,7 @@ function WriteDoc {
 #endregion
 
 # ============================================================================
-# Execute  the Script
+# Execute the Script
 # ============================================================================
 
 CheckModuleExists -Module "PScribo"
